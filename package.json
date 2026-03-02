@@ -10,7 +10,8 @@
   "scripts": {
     "build": "npm run --workspaces --if-present build",
     "test": "npm run build && node --test tests/**/*.test.mjs",
-    "ci": "npm run build && npm run test",
+    "test:coverage": "npm run build && node --experimental-test-coverage --test-coverage-include='packages/engine/dist/**/*.js' --test-coverage-lines=99 --test tests/**/*.test.mjs",
+    "ci": "npm run test:coverage",
     "stratosphere": "npm --workspace @stratosphere/cli run run --",
     "mcp:start": "npm --workspace @stratosphere/mcp run start"
   },

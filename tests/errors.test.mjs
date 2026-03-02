@@ -17,6 +17,20 @@ test("toErrorPayload preserves structured StratosphereError fields", () => {
   assert.deepEqual(payload.details, { field: "runtime_file" });
 });
 
+test("toErrorPayload handles native Error objects", () => {
+  const payload = toErrorPayload(new Error("boom"));
+  assert.equal(payload.code, "PIPELINE_FAILED");
+  assert.equal(payload.message, "boom");
+  assert.ok(payload.hint);
+});
+
+test("toErrorPayload handles non-Error throwables", () => {
+  const payload = toErrorPayload("bad");
+  assert.equal(payload.code, "PIPELINE_FAILED");
+  assert.equal(payload.message, "bad");
+  assert.ok(payload.hint);
+});
+
 test("runMigrationPipeline fails with INPUT_MISSING for snapshot mode without runtime", async () => {
   await assert.rejects(
     () =>

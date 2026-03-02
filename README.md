@@ -39,6 +39,7 @@ CLI validates conflicting/missing flags and returns structured errors with:
 
 ```bash
 npm run test
+npm run test:coverage
 ```
 
 ## Export Planning

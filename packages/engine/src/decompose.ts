@@ -141,8 +141,8 @@ export function decomposeRuntime(discovery: DiscoveryResult): DecompositionResul
     const stack = detectStackForComponent(processes, discovery);
     const confidence = confidenceFor(kind, persistent, scheduled, stack);
 
-    if (persistent && kind === "Deployment") {
-      blockers.push(`${name}: persistent writes detected but classified as Deployment.`);
+    if (persistent && scheduled) {
+      blockers.push(`${name}: both persistent writes and scheduled execution detected; verify workload split.`);
     }
 
     const ports = Array.from(new Set(processes.flatMap((process) => process.listeningPorts))).sort((a, b) => a - b);

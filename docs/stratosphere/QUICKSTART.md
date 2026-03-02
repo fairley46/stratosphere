@@ -69,6 +69,7 @@ Use MCP tool `generate_local_vm_bundle` when Stratosphere MCP is running on the 
 
 ```bash
 npm run test
+npm run test:coverage
 ```
 
 ## Generated bundle

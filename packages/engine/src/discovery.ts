@@ -33,6 +33,9 @@ type DiscoveryCommand = {
   command: string;
 };
 
+type SshCommandRunner = (connection: VmConnection, command: DiscoveryCommand) => Promise<ExecutedCommand>;
+type LocalCommandRunner = (command: DiscoveryCommand) => Promise<ExecutedCommand>;
+
 const SSH_DISCOVERY_COMMANDS: readonly DiscoveryCommand[] = [
   { key: "hostname", command: "hostname -f" },
   { key: "os-release", command: "cat /etc/os-release" },
@@ -57,6 +60,12 @@ type ExecutedCommand = {
   exitCode: number;
   durationMs: number;
 };
+
+type ExecRunner = (
+  file: string,
+  args: string[],
+  options: { timeout: number; maxBuffer: number }
+) => Promise<{ stdout: string; stderr: string }>;
 
 function clampSnippet(text: string): string {
   if (text.length <= COMMAND_SNIPPET_LIMIT) return text;
@@ -379,7 +388,11 @@ function mergeFallbackSnapshot(primary: RuntimeSnapshot, fallback?: RuntimeSnaps
   return merged;
 }
 
-async function runSshCommand(connection: VmConnection, command: DiscoveryCommand): Promise<ExecutedCommand> {
+async function runSshCommand(
+  connection: VmConnection,
+  command: DiscoveryCommand,
+  runExec: ExecRunner = execFileAsync as ExecRunner
+): Promise<ExecutedCommand> {
   const started = Date.now();
   const args = [
     "-o",
@@ -399,7 +412,7 @@ async function runSshCommand(connection: VmConnection, command: DiscoveryCommand
   args.push(`${connection.user}@${connection.host}`, "--", command.command);
 
   try {
-    const { stdout, stderr } = await execFileAsync("ssh", args, {
+    const { stdout, stderr } = await runExec("ssh", args, {
       timeout: SSH_COMMAND_TIMEOUT_MS,
       maxBuffer: 8 * 1024 * 1024,
     });
@@ -433,11 +446,11 @@ async function runSshCommand(connection: VmConnection, command: DiscoveryCommand
   }
 }
 
-async function runLocalCommand(command: DiscoveryCommand): Promise<ExecutedCommand> {
+async function runLocalCommand(command: DiscoveryCommand, runExec: ExecRunner = execFileAsync as ExecRunner): Promise<ExecutedCommand> {
   const started = Date.now();
 
   try {
-    const { stdout, stderr } = await execFileAsync("sh", ["-lc", command.command], {
+    const { stdout, stderr } = await runExec("sh", ["-lc", command.command], {
       timeout: SSH_COMMAND_TIMEOUT_MS,
       maxBuffer: 8 * 1024 * 1024,
     });
@@ -542,6 +555,11 @@ export class SnapshotDiscoveryAdapter implements DiscoveryAdapter {
 
 export class SshDiscoveryAdapter implements DiscoveryAdapter {
   readonly name = "ssh-readonly";
+  private readonly executeCommand: SshCommandRunner;
+
+  constructor(executeCommand: SshCommandRunner = runSshCommand) {
+    this.executeCommand = executeCommand;
+  }
 
   async collect(request: DiscoveryRequest): Promise<DiscoveryResult> {
     if (!request.connection) {
@@ -553,7 +571,9 @@ export class SshDiscoveryAdapter implements DiscoveryAdapter {
       });
     }
 
-    const commandRuns = await Promise.all(SSH_DISCOVERY_COMMANDS.map((command) => runSshCommand(request.connection!, command)));
+    const commandRuns = await Promise.all(
+      SSH_DISCOVERY_COMMANDS.map((command) => this.executeCommand(request.connection!, command))
+    );
 
     const warnings: string[] = [];
     const failed = commandRuns.filter((run) => run.exitCode !== 0);
@@ -588,9 +608,14 @@ export class SshDiscoveryAdapter implements DiscoveryAdapter {
 
 export class LocalDiscoveryAdapter implements DiscoveryAdapter {
   readonly name = "local-readonly";
+  private readonly executeCommand: LocalCommandRunner;
+
+  constructor(executeCommand: LocalCommandRunner = runLocalCommand) {
+    this.executeCommand = executeCommand;
+  }
 
   async collect(request: DiscoveryRequest): Promise<DiscoveryResult> {
-    const commandRuns = await Promise.all(SSH_DISCOVERY_COMMANDS.map((command) => runLocalCommand(command)));
+    const commandRuns = await Promise.all(SSH_DISCOVERY_COMMANDS.map((command) => this.executeCommand(command)));
 
     const warnings: string[] = [];
     const failed = commandRuns.filter((run) => run.exitCode !== 0);
@@ -626,3 +651,12 @@ export class LocalDiscoveryAdapter implements DiscoveryAdapter {
 export function getSshDiscoveryCommandSet(): readonly string[] {
   return SSH_DISCOVERY_COMMANDS.map((command) => command.command);
 }
+
+export const __discoveryTestables = {
+  runSshCommand,
+  runLocalCommand,
+  buildRuntimeSnapshot,
+  mergeFallbackSnapshot,
+  toCommandResult,
+  clampSnippet,
+};

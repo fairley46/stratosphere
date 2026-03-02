@@ -52,6 +52,13 @@ function buildSignoffCheckpoint(request: MigrationRunRequest): HumanSignoffCheck
   };
 }
 
+export const __orchestratorTestables = {
+  pickAdapter,
+  hashInput,
+  buildAudit,
+  buildSignoffCheckpoint,
+};
+
 export type DecompositionPreview = {
   graph: VmDnaGraph;
   decomposition: DecompositionResult;
