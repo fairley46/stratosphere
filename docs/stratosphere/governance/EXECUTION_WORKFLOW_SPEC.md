@@ -1,12 +1,12 @@
-# Stratosphere Execution Workflow Spec
-
-Date: March 2, 2026
+# Execution Workflow Spec
 
 ## Purpose
-Define how Stratosphere moves from planning-only outputs to controlled execution while enforcing user feedback and approval gates.
+Define how Stratosphere moves from planning outputs to a controlled, human-approved execution *plan* while enforcing review, feedback, and approval gates.
 
 ## Core Principle
 Stratosphere must pause for human review before any mutating operation.
+
+In this repo/version, Stratosphere does not perform mutating operations against Kubernetes clusters. It produces a governed execution plan and persists workflow state to the bundle so humans can run the cutover externally.
 
 ## Lifecycle States
 1. `DRAFTING`
@@ -105,43 +105,31 @@ Result:
 - policy violation
 - operator abort
 
-Rollback behavior:
+Rollback behavior (as a plan/checklist):
 - route traffic back to blue
 - freeze green mutations
 - capture diagnostics and incident summary
 
-## API Surface (Execution-Oriented)
-1. `POST /migration-jobs`
-- create or regenerate plan
-- accepts intake/workspace/targets/strategy
+## Current Implementation Surface (What Exists Today)
 
-2. `POST /migration-jobs/{id}/review`
-- submit `accept` or `request_changes`
-- includes structured feedback payload
+Workflow state is persisted inside the generated bundle as:
 
-3. `POST /migration-jobs/{id}/approve`
-- record approver decision
+- `reports/execution-job.json`
 
-4. `POST /migration-jobs/{id}/preflight`
-- run preflight checks
+You can operate the workflow via:
 
-5. `POST /migration-jobs/{id}/execute`
-- start execution only when state is `EXECUTION_READY`
+- CLI: generate a bundle, then initialize workflow state from the engine (see `scripts/demo.sh`)
+- MCP tools (recommended for agent workflows):
+  - `init_execution_workflow`
+  - `review_execution_workflow`
+  - `approve_execution_workflow`
+  - `run_execution_preflight`
+  - `execute_workflow` (planning-only status progression)
+  - `pause_execution_workflow`
+  - `rollback_execution_workflow`
+  - `compare_plan_revisions`
 
-6. `POST /migration-jobs/{id}/pause`
-- optional checkpoint pause
-
-7. `POST /migration-jobs/{id}/resume`
-- continue from paused state
-
-8. `POST /migration-jobs/{id}/rollback`
-- manual rollback trigger
-
-9. `GET /migration-jobs/{id}`
-- lifecycle state + stage details
-
-10. `GET /migration-jobs/{id}/artifacts`
-- all generated and runtime evidence
+Future work may add an HTTP API, but this repo does not include an API server.
 
 ## Required Inputs Before Execution
 1. Business requirements:
@@ -162,7 +150,7 @@ Rollback behavior:
   - full lifecycle state machine with persisted transitions (`reports/execution-job.json`)
   - review + approval gates with required approver floor (`>=2`)
   - preflight checks for approvals/readiness/evidence/export-policy gate
-  - execution, pause, rollback, and revision-diff tool surfaces in MCP
+  - execution, pause, rollback, and revision-diff tool surfaces in MCP (planning-only)
   - strategy/readiness/ROI/business-impact reporting and advisory blocker support
 - Still roadmap-bound:
   - direct production mutation orchestration against live clusters

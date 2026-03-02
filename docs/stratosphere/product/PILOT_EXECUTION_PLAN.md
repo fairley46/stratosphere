@@ -1,7 +1,5 @@
 # Stratosphere v1 Pilot Execution Plan
 
-Date: March 1, 2026
-
 ## 1) Pilot Purpose
 Validate that Stratosphere can reliably produce human-approved, deploy-ready migration artifacts for difficult VM-hosted applications without disrupting existing production systems.
 
@@ -54,7 +52,7 @@ Exit criteria:
 ### Week 6: Dry Run and Retrospective
 - Perform non-production dry-run deployments from generated artifacts.
 - Measure drift between expected and observed behavior.
-- Capture lessons and template improvements for v1 GA.
+- Capture lessons and template improvements for the first production rollout.
 
 Exit criteria:
 - Pilot scorecard published with pass/fail and remediations.
@@ -102,7 +100,7 @@ Business:
 - Vendor app support limitations.
   Mitigation: advisory-only mode and vendor engagement path.
 
-## 9) Go/No-Go Criteria for GA
+## 9) Go/No-Go Criteria for Release
 Go if all are true:
 - 3/3 pilot bundles complete and human-approved.
 - Median generation time meets <60 minute target.

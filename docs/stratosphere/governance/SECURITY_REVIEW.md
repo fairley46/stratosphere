@@ -1,6 +1,4 @@
 # Security Review
-
-Date: March 2, 2026
 Scope: CLI, MCP, engine export/discovery workflows, report generation paths.
 
 ## Summary
@@ -46,4 +44,4 @@ No direct credential logging paths were identified in normal flows.
 1. Add secret scanning in CI for committed fixtures and docs.
 2. Add allowlist for provider hostnames in enterprise environments.
 3. Add signed audit trail export for approval and preflight events.
-4. Run pilot threat modeling with security engineering before GA.
+4. Run pilot threat modeling with security engineering before broader rollout.

@@ -1,7 +1,5 @@
 # Stratosphere Product Overview
 
-Date: March 2, 2026
-
 ## Product Summary
 Stratosphere is an enterprise migration architect for legacy applications.
 It interrogates VM behavior, maps how an application works today, and generates a governed Kubernetes-first migration package teams can review and execute safely.
@@ -72,5 +70,9 @@ Core message:
 5. Structured errors and high automated test coverage gates.
 
 ## Current Delivery Status
-Stratosphere is feature-complete for planning and governance-driven migration packaging.
-Remaining GA-critical activity is real workload pilot validation across enterprise environments and target platform integrations.
+Stratosphere is feature-complete for planning and governance-driven migration packaging (CLI + MCP + bundle generation).
+
+The main gaps are operational validation and integration depth:
+1. Pilot validation against representative enterprise workloads (to tune templates and confidence rules).
+2. Enterprise export hardening (tenant/SSO expectations, scopes, and clearer preflight outcomes).
+3. Optional future execution automation (deploying to clusters) behind strong governance gates.

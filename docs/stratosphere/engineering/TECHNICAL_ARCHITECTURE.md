@@ -1,172 +1,168 @@
-# Stratosphere v1 Technical Architecture
+# Technical Architecture
 
-Date: March 1, 2026
+This repo ships Stratosphere as:
 
-## 1) Architecture Goals
-- Produce deterministic, auditable migration artifacts from live VM interrogation.
-- Keep discovery read-only and safe for production systems.
-- Support dual ingestion paths: runtime-only and runtime+source.
-- Enforce human-in-the-loop control before deployment use.
+- A standalone CLI (`apps/cli`)
+- A local MCP server over stdio (`apps/mcp`) for agent workflows (Claude Desktop, Opencode, etc.)
+- An in-process engine library (`packages/engine`) used by both
 
-## 2) High-Level System
+There is no Web UI or HTTP API in this version.
+
+---
+
+## Architecture Goals
+
+- Deterministic, auditable migration bundles from the same inputs and templates.
+- Safe discovery: read-only by default for snapshot, local, and SSH flows.
+- Human-in-the-loop: the tool produces artifacts and a reviewable plan, but does not deploy to clusters in v1.
+- Strong UX under failure: structured errors, redaction, and actionable hints.
+
+---
+
+## High-Level Flow
+
 ```text
-[Web UI / API]
-     |
-     v
-[Orchestrator]
-  |       |         |            |
-  v       v         v            v
-[SSH Discovery] [Source Analyzer] [Profiler] [Policy/Validation]
-        \        /        \
-         v      v          v
-          [VM DNA Graph + Evidence Store]
-                     |
-                     v
-          [Decomposition + Recommendation Engine]
-                     |
-                     v
-              [Artifact Generators]
-       (Dockerfile, Helm, Terraform/OpenStack)
-                     |
-                     v
-             [Export + Delivery Service]
-       (GitHub/GitLab repo + downloadable bundle)
+[CLI]                       [MCP Server (stdio)]
+  |                                 |
+  +--------------+------------------+
+                 v
+          [@stratosphere/engine]
+                 |
+                 | 1) Validate inputs (intake/workspace/targets)
+                 | 2) Discovery (runtime file | local | SSH)
+                 | 3) Normalize -> RuntimeSnapshot + Evidence
+                 | 4) Build app maps + VM DNA graph
+                 | 5) Decompose -> workloads + confidence + blockers
+                 | 6) Generate artifacts (Docker/Helm/Terraform) + reports
+                 | 7) Export plan (optional) + gated export execution (optional)
+                 v
+      [Bundle Dir: docker/ helm/ terraform/ reports/]
 ```
 
-## 3) Core Components
-### 3.1 Orchestrator Service
-Responsibilities:
-- Manage job lifecycle and execution states.
-- Trigger collectors, analyzers, and generators.
-- Persist intermediate graph snapshots and confidence metadata.
+Key constraint:
 
-Inputs:
-- VM connection profile.
-- Optional source repository path/credentials.
-- Target platform matrix (cloud/on-prem/OpenStack).
+- The output is "ready for review and deployment by humans".
+- Execution workflow artifacts exist (blue/green plan, approvals, preflight checks), but Stratosphere does not mutate Kubernetes clusters directly in this version.
 
-Outputs:
-- End-to-end migration package with decision trace.
+---
 
-### 3.2 SSH Discovery Service (Agentless v1)
-Responsibilities:
-- Execute read-only probes over SSH.
-- Capture process tree, listening ports, startup services, scheduled jobs, env vars, key file path usage, and dependency hints.
+## Repo Layout
 
-Technical notes:
-- Use allowlisted command set.
-- Harden with command timeouts and privilege restrictions.
-- Support Rocky Linux and RHEL first.
+- `apps/cli`: CLI wrapper around the engine pipeline.
+- `apps/mcp`: MCP server exposing engine capabilities as tools.
+- `packages/engine`: discovery, decomposition, report generation, artifact generation, export, and workflow state machine.
+- `fixtures/`: sample runtime snapshots, intake/workspace examples, and scenario fixtures.
+- `scripts/`: demo automation (`scripts/demo.sh`).
+- `tests/`: Node test runner coverage + behavior tests.
+- `artifacts/`: default output directory for generated bundles (gitignored).
 
-### 3.3 Source Analyzer Service
-Responsibilities:
-- Detect stack and build system from manifests and repository layout.
-- Map runtime processes to source components where possible.
+---
 
-v1 stack support:
-- Java/Spring
-- .NET
-- Node.js
-- Python planned immediately after GA
+## Engine: Main Responsibilities
 
-### 3.4 Profiler Service
-Responsibilities:
-- Aggregate per-process CPU/memory/network samples over time windows.
-- Infer right-sizing defaults for Kubernetes resources.
+### 1) Validation (Inputs and Safety)
 
-Output fields:
-- Suggested requests/limits.
-- Variance and confidence level.
+The engine validates and normalizes:
 
-### 3.5 VM DNA Graph + Evidence Store
-Purpose:
-- Canonical representation of app topology and behavior.
+- Business intake (`validateBusinessIntake`)
+- Application workspace (`validateApplicationWorkspace`)
+- Bundle directory state (`validateBundleDirectory`)
+- Export request parameters and policy gates
 
-Node examples:
-- Process, service, endpoint, datastore, schedule, filesystem volume, external dependency.
+The goal is to fail fast with actionable error payloads (code + message + hint) instead of partially generating bundles.
 
-Edge examples:
-- talks-to, reads-from, writes-to, starts-with, schedules.
+### 2) Discovery (Evidence Collection)
 
-Storage model:
-- Graph snapshot (JSON/Graph DB abstraction).
-- Evidence artifacts (command output hashes, file markers, source references).
-- Decision logs (why a component was classified a certain way).
+Discovery is an adapter interface:
 
-### 3.6 Decomposition + Recommendation Engine
-Responsibilities:
-- Classify components into `Deployment`, `StatefulSet`, `CronJob`/`Job`.
-- Detect migration blockers (state coupling, hardcoded endpoints, privileged assumptions).
-- Emit confidence and rationale per recommendation.
+- `DiscoveryAdapter.collect(request) -> { runtime, evidence }`
 
-Decision framework:
-- Rules-first baseline + model-assisted scoring.
-- Conservative fallback to avoid over-decomposition.
+Current adapters include:
 
-### 3.7 Artifact Generators
-Outputs:
-- Dockerfiles with hardened defaults (minimal base, non-root user, reduced attack surface).
-- Helm charts with probes/resources/configuration patterns and override values.
-- Terraform modules for AWS/Azure/GCP/on-prem patterns plus OpenStack v1 generation.
+- Runtime snapshot file ingestion
+- Local read-only discovery (runs on the host where CLI/MCP executes)
+- SSH read-only discovery (allowlisted commands + timeouts)
 
-Design requirements:
-- Human-readable files.
-- Strong defaults, minimal required edits.
-- Environment override support without template rewrites.
+SSH discovery is intentionally constrained:
 
-### 3.8 Policy and Validation Service
-Responsibilities:
-- Validate generated artifacts for syntax and policy conformance.
-- Enforce mandatory review checkpoints and report unresolved blockers.
+- Fixed allowlisted command set (no arbitrary remote shell execution)
+- Command timeout enforcement
+- Output snippet clamping to avoid runaway logs
 
-v1 focus:
-- Non-PCI launch with PCI-aware control mapping metadata.
-- Policy-ready output for later compliance hardening.
+### 3) Decomposition (Recommendations + Confidence)
 
-### 3.9 Export and Delivery Service
-Responsibilities:
-- Package full migration bundle.
-- Push to GitHub/GitLab repositories.
-- Generate downloadable archive for offline handoff.
+The engine classifies components into Kubernetes workload types:
 
-Bundle contents:
-- Dockerfiles
-- Helm chart
-- Terraform modules
-- Decomposition rationale report
-- Validation report
-- Blue/green runbook template
+- `Deployment` for stateless services
+- `StatefulSet` when stateful storage/dependencies are detected
+- `CronJob`/`Job` for scheduled/batch work
 
-## 4) Control Plane and Safety
-- Read-only discovery by default, explicit elevated mode disabled in v1.
-- No direct deployment execution in v1.
-- Mandatory final human approval state before marking package "deployable".
-- Advisory-only mode for vendor-proprietary applications.
+Each recommendation carries:
 
-## 5) APIs (v1 Draft)
-- `POST /migration-jobs`: create migration run.
-- `GET /migration-jobs/{id}`: fetch status and stage output.
-- `GET /migration-jobs/{id}/graph`: fetch VM DNA graph.
-- `GET /migration-jobs/{id}/artifacts`: fetch generated artifacts metadata.
-- `POST /migration-jobs/{id}/export`: export bundle or publish repository.
-- `POST /migration-jobs/{id}/approve`: record human sign-off.
+- Rationale (what evidence caused the decision)
+- Confidence score
+- Blockers / unknowns that require human confirmation
 
-## 6) MCP/OpenCode Roadmap Hook
-v1 uses SSH-first discovery. To extend coverage, design discovery adapters behind a common interface:
-- `DiscoveryAdapter.run()`
-- `DiscoveryAdapter.capabilities()`
-- `DiscoveryAdapter.evidence()`
+### 4) Artifact Generation + Reports
 
-MCP/OpenCode can later become additional adapters without reworking the core orchestrator.
+The engine writes a bundle directory that includes:
 
-## 7) Target NFRs
-- Median time-to-first-bundle: <60 minutes/VM.
-- 99% job-state durability (resume/retry on non-fatal stage failures).
-- Full traceability for every decomposition recommendation.
-- Deterministic output for identical inputs and template versions.
+- Dockerfiles per component (`docker/`)
+- Helm chart scaffold (`helm/`)
+- Terraform scaffold (`terraform/`)
+- Reports and decision artifacts (`reports/`)
 
-## 8) Delivery Milestones
-- Phase 1 (March 2026): orchestrator + SSH discovery + graph schema.
-- Phase 2 (April 2026): decomposition engine + confidence reporting.
-- Phase 3 (May 2026): artifact generators + export pipelines.
-- Phase 4 (late May to early June 2026): validation hardening + pilot stabilization.
+Reports are designed to be readable by both engineers and non-technical app owners:
+
+- Executive summary
+- Current vs future application maps
+- Migration options and readiness score
+- ROI estimate and business impact translation
+- Cutover plan (blue/green stages + rollback triggers)
+
+### 5) Export: Plan vs Execute
+
+Stratosphere supports:
+
+- Export planning output (always available)
+- Export execution (optional, explicitly policy-gated)
+
+Export execution requires both:
+
+- `--export-execute`
+- `STRATOSPHERE_ENABLE_EXPORT_EXECUTION=true` (environment gate)
+
+Provider integration targets:
+
+- GitHub
+- GitLab
+
+---
+
+## Execution Workflow (Governance, Not Deployment)
+
+The workflow state machine is persisted as:
+
+- `reports/execution-job.json`
+
+It models:
+
+- Review gate
+- Approval threshold gate (>=2 approvers)
+- Preflight checks (including readiness threshold)
+- Execution steps as a plan/checklist (blue/green), not live cluster mutation
+
+MCP tools expose workflow operations for agent workflows, but execution remains planning-only in this version.
+
+---
+
+## What This Version Does Not Include
+
+To avoid confusion, these are intentionally out of scope for the current repo:
+
+- A Web UI
+- An HTTP API server
+- Direct Kubernetes cluster mutation / traffic shifting automation
+
+Those belong in a future "orchestrator service" built around the engine, after pilot validation and enterprise auth/policy requirements are finalized.
+

@@ -1,7 +1,5 @@
 # Enterprise Readiness
 
-Date: March 2, 2026
-
 ## Objective
 Define what "enterprise-ready" means for Stratosphere so engineering, security, and operations teams can adopt it with clear expectations.
 
@@ -54,7 +52,7 @@ Define what "enterprise-ready" means for Stratosphere so engineering, security, 
 2. Platform-specific preflight checks in target clusters.
 3. Provider API mutation behavior under enterprise token scopes.
 
-## Definition of Enterprise-Ready for GA
+## Definition of Enterprise-Ready for Release
 1. Three pilot workloads complete with human-approved bundles and no source disruption.
 2. Security sign-off on access model and export execution policy.
 3. Operational runbook accepted by platform and SRE teams.

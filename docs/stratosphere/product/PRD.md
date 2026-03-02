@@ -2,9 +2,6 @@
 
 *Product requirements, scope boundaries, and success criteria for the Stratosphere v1 release.*
 
-Date: March 1, 2026
-Owner: Product + Platform Engineering
-
 ## 1) Product Summary
 Stratosphere is an AI-driven migration architect that interrogates running virtual machines over SSH, optionally inspects source code, and produces deploy-ready Kubernetes migration artifacts. v1 focuses on human-reviewed artifact generation, not automated production cutover.
 

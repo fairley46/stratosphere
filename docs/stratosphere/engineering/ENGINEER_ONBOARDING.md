@@ -1,7 +1,5 @@
 # Engineer Onboarding
 
-Date: March 2, 2026
-
 ## Goal
 Get a new engineer productive with Stratosphere in under 30 minutes.
 
