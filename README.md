@@ -34,6 +34,39 @@ Each run now also includes:
 - `reports/runtime-profile-summary.json` (process-level sizing summary)
 - `reports/source-analysis.json` (runtime-to-source component mapping hints)
 
+## New Flows (Phase 1-3 Kickoff)
+
+### 1) Non-technical owner flow (recommended)
+
+Provide runtime + business intake + application workspace:
+
+```bash
+npm run stratosphere -- \
+  --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --intake-file fixtures/stratosphere/sample-intake.json \
+  --workspace-file fixtures/stratosphere/sample-workspace.json \
+  --out-dir artifacts/stratosphere
+```
+
+This flow adds:
+- `reports/executive-summary.md` for business/stakeholder review.
+- `reports/intake.json` and `reports/workspace.json` for context traceability.
+
+### 2) Local VM discovery flow
+
+```bash
+npm run stratosphere -- \
+  --local-discovery \
+  --intake-file fixtures/stratosphere/sample-intake.json \
+  --workspace-file fixtures/stratosphere/sample-workspace.json \
+  --out-dir artifacts/stratosphere
+```
+
+### 3) Vendor-owned advisory mode
+
+Set `"vendorOwned": true` in intake JSON to force advisory-only blocker output.
+This ensures recommendations are reviewed with the software vendor before implementation planning.
+
 ## Local VM Discovery (No SSH)
 
 Run Stratosphere directly on the VM and interrogate local runtime state:
@@ -89,6 +122,14 @@ Tools exposed:
 - `generate_local_vm_bundle`
 - `validate_migration_bundle`
 - `explain_decomposition`
+
+### MCP flow with intake + workspace context
+
+When using `generate_migration_bundle` or `generate_local_vm_bundle`, include:
+- `intake_file`
+- `workspace_file`
+
+These map to the same JSON structures as CLI `--intake-file` and `--workspace-file`.
 
 ## Opencode Local VM Use Case
 
