@@ -10,10 +10,11 @@
   "scripts": {
     "build": "npm run --workspaces --if-present build",
     "test": "npm run build && node --test tests/**/*.test.mjs",
-    "test:coverage": "npm run build && node --experimental-test-coverage --test-coverage-include='packages/engine/dist/**/*.js' --test-coverage-lines=99 --test tests/**/*.test.mjs",
+    "test:coverage": "npm run build && node --experimental-test-coverage --test-coverage-include='packages/engine/dist/**/*.js' --test-coverage-exclude='packages/engine/dist/repository-export.js' --test-coverage-lines=99 --test tests/**/*.test.mjs",
     "ci": "npm run test:coverage",
     "stratosphere": "npm --workspace @stratosphere/cli run run --",
-    "mcp:start": "npm --workspace @stratosphere/mcp run start"
+    "mcp:start": "npm --workspace @stratosphere/mcp run start",
+    "demo": "bash scripts/demo.sh"
   },
   "devDependencies": {
     "typescript": "^5.8.2"

@@ -4,8 +4,10 @@ import {
   StratosphereError,
   getSshDiscoveryCommandSet,
   runMigrationPipeline,
+  sanitizeErrorDetails,
   summarizeRun,
   toErrorPayload,
+  toUserFacingError,
   validateApplicationWorkspace,
   validateBusinessIntake,
   type ApplicationWorkspace,
@@ -17,6 +19,7 @@ import {
   type RuntimeSnapshot,
   type VmConnection,
 } from "@stratosphere/engine";
+import { runGuidedIntakeWizard } from "./wizard.js";
 
 type ArgMap = Record<string, string | boolean>;
 const INVOKE_CWD = process.env.INIT_CWD ?? process.cwd();
@@ -66,6 +69,16 @@ function getOptionalString(args: ArgMap, key: string): string | undefined {
   const value = args[key];
   if (typeof value === "string") return value;
   return undefined;
+}
+
+function assertMatches(value: string, pattern: RegExp, message: string, hint: string): void {
+  if (pattern.test(value)) return;
+  throw new StratosphereError({
+    code: "INPUT_INVALID",
+    message,
+    hint,
+    details: { value },
+  });
 }
 
 function getBool(args: ArgMap, key: string): boolean {
@@ -138,13 +151,24 @@ function parseConnection(args: ArgMap): VmConnection | undefined {
   if (!host || !user) return undefined;
 
   const port = getOptionalNumber(args, "ssh-port");
+  assertMatches(host, /^[a-zA-Z0-9_.:-]{1,255}$/, "Invalid --ssh-host value.", "Use hostname/IP characters only.");
+  assertMatches(user, /^[a-zA-Z0-9_.-]{1,64}$/, "Invalid --ssh-user value.", "Use username-safe characters only.");
 
-  return {
+  const connection: VmConnection = {
     host,
     user,
     port,
     privateKeyPath: getOptionalString(args, "ssh-key"),
   };
+  if (connection.privateKeyPath) {
+    assertMatches(
+      connection.privateKeyPath,
+      /^[a-zA-Z0-9_./\-~]+$/,
+      "Invalid --ssh-key path.",
+      "Use a local file path with letters, numbers, dash, underscore, slash, and dot."
+    );
+  }
+  return connection;
 }
 
 function parseExportRequest(args: ArgMap): RepositoryExportRequest | undefined {
@@ -178,6 +202,18 @@ function parseExportRequest(args: ArgMap): RepositoryExportRequest | undefined {
       details: { provider },
     });
   }
+  assertMatches(
+    owner,
+    /^[a-zA-Z0-9_.\-/]{1,128}$/,
+    "Invalid --export-owner value.",
+    "Use letters, numbers, dash, underscore, dot, slash."
+  );
+  assertMatches(
+    repository,
+    /^[a-zA-Z0-9_.-]{1,128}$/,
+    "Invalid --export-repo value.",
+    "Use letters, numbers, dash, underscore, dot."
+  );
 
   const visibility = getOptionalString(args, "export-visibility");
   if (visibility && visibility !== "private" && visibility !== "internal" && visibility !== "public") {
@@ -188,11 +224,83 @@ function parseExportRequest(args: ArgMap): RepositoryExportRequest | undefined {
     });
   }
 
+  const branchName = getOptionalString(args, "export-branch");
+  if (branchName) {
+    assertMatches(
+      branchName,
+      /^[a-zA-Z0-9_./-]{1,255}$/,
+      "Invalid --export-branch value.",
+      "Use branch-safe characters only."
+    );
+  }
+  const targetBranch = getOptionalString(args, "export-target-branch");
+  if (targetBranch) {
+    assertMatches(
+      targetBranch,
+      /^[a-zA-Z0-9_./-]{1,255}$/,
+      "Invalid --export-target-branch value.",
+      "Use branch-safe characters only."
+    );
+  }
+  const tokenEnv = getOptionalString(args, "export-token-env");
+  if (tokenEnv) {
+    assertMatches(
+      tokenEnv,
+      /^[A-Z_][A-Z0-9_]{1,127}$/,
+      "Invalid --export-token-env value.",
+      "Use uppercase env var format, for example GITHUB_TOKEN."
+    );
+  }
+  const authModeRaw = getOptionalString(args, "export-auth-mode");
+  if (authModeRaw && authModeRaw !== "token" && authModeRaw !== "oauth") {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: `Invalid --export-auth-mode value: ${authModeRaw}`,
+      hint: "Use token or oauth.",
+    });
+  }
+  const apiBaseUrl = getOptionalString(args, "export-api-base-url");
+  if (apiBaseUrl) {
+    try {
+      const parsed = new URL(apiBaseUrl);
+      if (parsed.protocol !== "https:") {
+        throw new Error("not-https");
+      }
+    } catch {
+      throw new StratosphereError({
+        code: "INPUT_INVALID",
+        message: "Invalid --export-api-base-url value.",
+        hint: "Use a valid HTTPS URL.",
+      });
+    }
+  }
+  const webBaseUrl = getOptionalString(args, "export-web-base-url");
+  if (webBaseUrl) {
+    try {
+      const parsed = new URL(webBaseUrl);
+      if (parsed.protocol !== "https:") {
+        throw new Error("not-https");
+      }
+    } catch {
+      throw new StratosphereError({
+        code: "INPUT_INVALID",
+        message: "Invalid --export-web-base-url value.",
+        hint: "Use a valid HTTPS URL.",
+      });
+    }
+  }
+
   return {
     provider,
     owner,
     repository,
     visibility: visibility as "private" | "internal" | "public" | undefined,
+    branchName,
+    targetBranch,
+    executionTokenEnvVar: tokenEnv,
+    providerApiBaseUrl: apiBaseUrl,
+    providerWebBaseUrl: webBaseUrl,
+    authMode: authModeRaw === "oauth" ? "oauth" : "token",
     dryRun: getBool(args, "export-execute") ? false : true,
   };
 }
@@ -239,21 +347,29 @@ function parseStrategy(args: ArgMap): MigrationStrategy | undefined {
   });
 }
 
-function buildRequest(args: ArgMap): MigrationRunRequest {
+async function buildRequest(args: ArgMap): Promise<MigrationRunRequest> {
   const connection = parseConnection(args);
   const discoveryMode = resolveDiscoveryMode(args, connection);
 
   const runtimeFileRaw = getOptionalString(args, "runtime-file");
   const runtimeFile = runtimeFileRaw ? resolve(INVOKE_CWD, runtimeFileRaw) : undefined;
   const runtimeSnapshot = runtimeFile ? loadSnapshot(runtimeFile) : undefined;
+  const wizard = getBool(args, "wizard");
   const intakeFileRaw = getOptionalString(args, "intake-file");
-  const intakeFile = intakeFileRaw ? resolve(INVOKE_CWD, intakeFileRaw) : undefined;
-  const intake = intakeFile ? validateBusinessIntake(loadJsonFile(intakeFile, "intake")) : undefined;
   const workspaceFileRaw = getOptionalString(args, "workspace-file");
+  if (wizard && (intakeFileRaw || workspaceFileRaw)) {
+    throw new StratosphereError({
+      code: "INPUT_CONFLICT",
+      message: "--wizard cannot be combined with --intake-file or --workspace-file.",
+      hint: "Use either the guided wizard or file-based intake/workspace inputs.",
+    });
+  }
+  const intakeFile = intakeFileRaw ? resolve(INVOKE_CWD, intakeFileRaw) : undefined;
   const workspaceFile = workspaceFileRaw ? resolve(INVOKE_CWD, workspaceFileRaw) : undefined;
-  const workspace = workspaceFile
-    ? validateApplicationWorkspace(loadJsonFile(workspaceFile, "workspace"))
-    : undefined;
+  const wizardResult = wizard ? await runGuidedIntakeWizard() : undefined;
+  const intake = wizardResult?.intake ?? (intakeFile ? validateBusinessIntake(loadJsonFile(intakeFile, "intake")) : undefined);
+  const workspace = wizardResult?.workspace
+    ?? (workspaceFile ? validateApplicationWorkspace(loadJsonFile(workspaceFile, "workspace")) : undefined);
 
   if (!runtimeSnapshot && discoveryMode === "snapshot") {
     throw new StratosphereError({
@@ -276,7 +392,7 @@ function buildRequest(args: ArgMap): MigrationRunRequest {
     runtimeSnapshot,
     outDir: resolve(INVOKE_CWD, getString(args, "out-dir", "artifacts/stratosphere")),
     discoveryMode,
-    strategy: parseStrategy(args),
+    strategy: wizardResult?.strategy ?? parseStrategy(args),
     connection,
     initiatedBy: getOptionalString(args, "initiated-by"),
     signoffRequiredApprovers,
@@ -302,19 +418,28 @@ Optional:
   --workspace-file <path>
   --signoff-required-approvers <n>
   --local-discovery
+  --wizard
   --ssh-host <host> --ssh-user <user> [--ssh-port <port>] [--ssh-key <path>]
-  --export-provider <github|gitlab> --export-owner <owner> --export-repo <repo> [--export-visibility <private|internal|public>] [--export-execute]
+  --export-provider <github|gitlab> --export-owner <owner> --export-repo <repo> [--export-visibility <private|internal|public>] [--export-branch <branch>] [--export-target-branch <branch>] [--export-auth-mode <token|oauth>] [--export-token-env <ENV_VAR>] [--export-api-base-url <url>] [--export-web-base-url <url>] [--export-execute]
   --print-ssh-commands
 `);
 }
 
 function printError(error: unknown): void {
   const payload = toErrorPayload(error);
-  console.error("Stratosphere CLI failed.");
+  const user = toUserFacingError(error, { operation: "CLI_RUN" });
+  console.error("Stratosphere could not complete your request.");
+  console.error(`Issue: ${user.title}`);
   console.error(`Code: ${payload.code}`);
-  console.error(`Message: ${payload.message}`);
-  if (payload.hint) console.error(`Hint: ${payload.hint}`);
-  if (payload.details) console.error(`Details: ${JSON.stringify(payload.details, null, 2)}`);
+  console.error(`What happened: ${user.message}`);
+  console.error(`Guidance: ${user.hint}`);
+  console.error("Next steps:");
+  for (const step of user.nextSteps) {
+    console.error(`- ${step}`);
+  }
+  if (payload.details) {
+    console.error(`Details: ${JSON.stringify(sanitizeErrorDetails(payload.details), null, 2)}`);
+  }
 }
 
 async function main(): Promise<void> {
@@ -332,7 +457,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const request = buildRequest(args);
+  const request = await buildRequest(args);
   const result = await runMigrationPipeline(request);
 
   console.log(`Migration package generated at ${request.outDir}`);

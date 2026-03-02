@@ -4,14 +4,25 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   StratosphereError,
+  diffPlanRevisions,
+  initExecutionWorkflow,
+  loadExecutionJob,
+  pauseExecution,
+  registerExecutionApproval,
+  runExecutionPreflight,
+  startExecution,
+  submitExecutionReview,
+  triggerRollback,
   validateApplicationWorkspace,
   validateBusinessIntake,
   buildApplicationMaps,
   getSshDiscoveryCommandSet,
   previewDecomposition,
   runMigrationPipeline,
+  sanitizeErrorDetails,
   summarizeRun,
   toErrorPayload,
+  toUserFacingError,
   validateBundleDirectory,
   type MigrationRunRequest,
   type RepositoryExportRequest,
@@ -73,6 +84,27 @@ function buildConnection(
   }
 
   if (!sshHost || !sshUser) return undefined;
+  if (!/^[a-zA-Z0-9_.:-]{1,255}$/.test(sshHost)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "ssh_host contains unsupported characters.",
+      hint: "Use hostname/IP-safe characters only.",
+    });
+  }
+  if (!/^[a-zA-Z0-9_.-]{1,64}$/.test(sshUser)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "ssh_user contains unsupported characters.",
+      hint: "Use username-safe characters only.",
+    });
+  }
+  if (sshKey && !/^[a-zA-Z0-9_./\-~]+$/.test(sshKey)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "ssh_key contains unsupported characters.",
+      hint: "Use a local file path with safe path characters.",
+    });
+  }
   return {
     host: sshHost,
     user: sshUser,
@@ -86,6 +118,12 @@ function buildExportRequest(
   owner?: string,
   repository?: string,
   visibility?: "private" | "internal" | "public",
+  branchName?: string,
+  targetBranch?: string,
+  authMode?: "token" | "oauth",
+  providerApiBaseUrl?: string,
+  providerWebBaseUrl?: string,
+  executionTokenEnvVar?: string,
   exportExecute?: boolean
 ): RepositoryExportRequest | undefined {
   if (!provider) return undefined;
@@ -97,12 +135,77 @@ function buildExportRequest(
       details: { provider, ownerProvided: Boolean(owner), repositoryProvided: Boolean(repository) },
     });
   }
+  if (!/^[a-zA-Z0-9_.\-/]{1,128}$/.test(owner)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "export_owner contains unsupported characters.",
+      hint: "Use letters, numbers, dash, underscore, dot, slash.",
+    });
+  }
+  if (!/^[a-zA-Z0-9_.-]{1,128}$/.test(repository)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "export_repo contains unsupported characters.",
+      hint: "Use letters, numbers, dash, underscore, dot.",
+    });
+  }
+  if (branchName && !/^[a-zA-Z0-9_./-]{1,255}$/.test(branchName)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "export_branch contains unsupported characters.",
+      hint: "Use branch-safe characters only.",
+    });
+  }
+  if (targetBranch && !/^[a-zA-Z0-9_./-]{1,255}$/.test(targetBranch)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "export_target_branch contains unsupported characters.",
+      hint: "Use branch-safe characters only.",
+    });
+  }
+  if (executionTokenEnvVar && !/^[A-Z_][A-Z0-9_]{1,127}$/.test(executionTokenEnvVar)) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "export_token_env contains unsupported format.",
+      hint: "Use uppercase env var format, for example GITHUB_TOKEN.",
+    });
+  }
+  if (providerApiBaseUrl) {
+    try {
+      const parsed = new URL(providerApiBaseUrl);
+      if (parsed.protocol !== "https:") throw new Error("not-https");
+    } catch {
+      throw new StratosphereError({
+        code: "INPUT_INVALID",
+        message: "export_api_base_url must be a valid HTTPS URL.",
+        hint: "Use a valid HTTPS API base URL for enterprise host configuration.",
+      });
+    }
+  }
+  if (providerWebBaseUrl) {
+    try {
+      const parsed = new URL(providerWebBaseUrl);
+      if (parsed.protocol !== "https:") throw new Error("not-https");
+    } catch {
+      throw new StratosphereError({
+        code: "INPUT_INVALID",
+        message: "export_web_base_url must be a valid HTTPS URL.",
+        hint: "Use a valid HTTPS web base URL for git remote configuration.",
+      });
+    }
+  }
 
   return {
     provider,
     owner,
     repository,
     visibility,
+    branchName,
+    targetBranch,
+    authMode,
+    providerApiBaseUrl,
+    providerWebBaseUrl,
+    executionTokenEnvVar,
     dryRun: exportExecute ? false : true,
   };
 }
@@ -122,6 +225,11 @@ function validateSignoffApprovers(value?: number): number | undefined {
 
 function fail(error: unknown, fallbackCode: string, fallbackDetails?: Record<string, unknown>) {
   const payload = toErrorPayload(error);
+  const user = toUserFacingError(error, { operation: fallbackCode });
+  const details = sanitizeErrorDetails({
+    ...(fallbackDetails ?? {}),
+    ...(payload.details ?? {}),
+  });
   return {
     content: [
       {
@@ -129,13 +237,13 @@ function fail(error: unknown, fallbackCode: string, fallbackDetails?: Record<str
         text: JSON.stringify(
           {
             error: {
-              code: payload.code ?? fallbackCode,
-              message: payload.message,
-              hint: payload.hint,
-              details: {
-                ...(fallbackDetails ?? {}),
-                ...(payload.details ?? {}),
-              },
+              operation: fallbackCode,
+              code: user.code ?? fallbackCode,
+              title: user.title,
+              message: user.message,
+              hint: user.hint,
+              nextSteps: user.nextSteps,
+              details,
             },
           },
           null,
@@ -178,6 +286,12 @@ server.tool(
     export_owner: z.string().optional().describe("Repository owner/group"),
     export_repo: z.string().optional().describe("Repository name"),
     export_visibility: z.enum(["private", "internal", "public"]).optional().describe("Repository visibility"),
+    export_branch: z.string().optional().describe("Branch to use for artifact push"),
+    export_target_branch: z.string().optional().describe("Target branch for pull/merge request"),
+    export_auth_mode: z.enum(["token", "oauth"]).optional().describe("Credential mode used by provider API"),
+    export_api_base_url: z.string().optional().describe("Provider API base URL for enterprise hosts"),
+    export_web_base_url: z.string().optional().describe("Provider web base URL for git remote"),
+    export_token_env: z.string().optional().describe("Env var name holding repository token for export execution"),
     export_execute: z.boolean().optional().describe("Set true to request non-dry-run export actions"),
   },
   async (input) => {
@@ -199,6 +313,12 @@ server.tool(
       export_owner,
       export_repo,
       export_visibility,
+      export_branch,
+      export_target_branch,
+      export_auth_mode,
+      export_api_base_url,
+      export_web_base_url,
+      export_token_env,
       export_execute,
     } = input;
 
@@ -247,6 +367,12 @@ server.tool(
           export_owner,
           export_repo,
           export_visibility,
+          export_branch,
+          export_target_branch,
+          export_auth_mode,
+          export_api_base_url,
+          export_web_base_url,
+          export_token_env,
           export_execute
         ),
       };
@@ -473,6 +599,204 @@ server.tool(
       };
     } catch (error) {
       return fail(error, "DECOMPOSITION_PREVIEW_FAILED", { runtime_file });
+    }
+  }
+);
+
+server.tool(
+  "init_execution_workflow",
+  "Initialize Kubernetes-first execution workflow state for a generated migration bundle.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    migration_id: z.string().describe("Migration id associated with the bundle"),
+    target_environment: z.string().describe("Execution target label (for example: stage-us-central1)"),
+    required_approvers: z.number().optional().describe("Minimum approvers required; floor is 2"),
+  },
+  async ({ bundle_dir, migration_id, target_environment, required_approvers }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = initExecutionWorkflow({
+        migrationId: migration_id,
+        bundleDir,
+        targetEnvironment: target_environment,
+        requiredApprovers: required_approvers,
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_INIT_FAILED", { bundle_dir, migration_id });
+    }
+  }
+);
+
+server.tool(
+  "review_execution_workflow",
+  "Submit required review decision before approvals/execution.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    reviewer: z.string().describe("Reviewer name or identity"),
+    decision: z.enum(["accept", "request_changes"]).describe("Review outcome"),
+    notes: z.string().describe("Review notes"),
+  },
+  async ({ bundle_dir, reviewer, decision, notes }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = submitExecutionReview({
+        bundleDir,
+        by: reviewer,
+        decision,
+        notes,
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_REVIEW_FAILED", { bundle_dir, reviewer, decision });
+    }
+  }
+);
+
+server.tool(
+  "approve_execution_workflow",
+  "Register an approval for execution workflow. Requires 2+ unique approvers.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    approver: z.string().describe("Approver identity"),
+  },
+  async ({ bundle_dir, approver }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = registerExecutionApproval({ bundleDir, by: approver });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_APPROVAL_FAILED", { bundle_dir, approver });
+    }
+  }
+);
+
+server.tool(
+  "run_execution_preflight",
+  "Run preflight checks after approvals and before any mutation.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    require_export_execution: z
+      .boolean()
+      .optional()
+      .describe("If true, requires explicit export execution policy enablement"),
+  },
+  async ({ bundle_dir, require_export_execution }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = runExecutionPreflight({
+        bundleDir,
+        requireExportExecution: require_export_execution,
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_PREFLIGHT_FAILED", { bundle_dir });
+    }
+  }
+);
+
+server.tool(
+  "execute_workflow",
+  "Execute Kubernetes-first blue/green workflow after preflight.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    pause_after_step_id: z.string().optional().describe("Optional step id to pause after"),
+  },
+  async ({ bundle_dir, pause_after_step_id }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = startExecution({ bundleDir, pauseAfterStepId: pause_after_step_id });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_EXECUTION_FAILED", { bundle_dir, pause_after_step_id });
+    }
+  }
+);
+
+server.tool(
+  "pause_execution_workflow",
+  "Pause execution for human checkpoint review.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    reason: z.string().describe("Pause reason"),
+  },
+  async ({ bundle_dir, reason }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = pauseExecution({ bundleDir, reason });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_PAUSE_FAILED", { bundle_dir });
+    }
+  }
+);
+
+server.tool(
+  "rollback_execution_workflow",
+  "Trigger rollback flow to restore blue path.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+    reason: z.string().describe("Rollback reason"),
+  },
+  async ({ bundle_dir, reason }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = triggerRollback({ bundleDir, reason });
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_ROLLBACK_FAILED", { bundle_dir });
+    }
+  }
+);
+
+server.tool(
+  "get_execution_workflow_status",
+  "Fetch current execution workflow state and checkpoints.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+  },
+  async ({ bundle_dir }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const job = loadExecutionJob(bundleDir);
+      return {
+        content: [{ type: "text", text: JSON.stringify(job, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "WORKFLOW_STATUS_FAILED", { bundle_dir });
+    }
+  }
+);
+
+server.tool(
+  "compare_plan_revisions",
+  "Compare two generated bundle revisions and return change summary.",
+  {
+    from_bundle_dir: z.string().describe("Older bundle directory"),
+    to_bundle_dir: z.string().describe("Newer bundle directory"),
+  },
+  async ({ from_bundle_dir, to_bundle_dir }) => {
+    try {
+      const diff = diffPlanRevisions(resolve(from_bundle_dir), resolve(to_bundle_dir));
+      return {
+        content: [{ type: "text", text: JSON.stringify(diff, null, 2) }],
+      };
+    } catch (error) {
+      return fail(error, "REVISION_DIFF_FAILED", { from_bundle_dir, to_bundle_dir });
     }
   }
 );
