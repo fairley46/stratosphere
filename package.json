@@ -8,7 +8,9 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run -ws build",
+    "build": "npm run --workspaces --if-present build",
+    "test": "npm run build && node --test tests/**/*.test.mjs",
+    "ci": "npm run build && npm run test",
     "stratosphere": "npm --workspace @stratosphere/cli run run --",
     "mcp:start": "npm --workspace @stratosphere/mcp run start"
   },

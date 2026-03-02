@@ -1,5 +1,7 @@
 export type WorkloadKind = "Deployment" | "StatefulSet" | "CronJob";
 
+export type StackType = "java-spring" | "dotnet" | "nodejs" | "python" | "unknown";
+
 export type VmConnection = {
   host: string;
   port?: number;
@@ -54,8 +56,16 @@ export type ScheduledJob = {
 
 export type SourceHints = {
   repositoryPath?: string;
-  detectedStacks: Array<"java-spring" | "dotnet" | "nodejs" | "python" | "unknown">;
+  detectedStacks: StackType[];
   buildFiles: string[];
+};
+
+export type CommandExecutionResult = {
+  command: string;
+  exitCode: number;
+  stdoutSnippet: string;
+  stderrSnippet: string;
+  durationMs: number;
 };
 
 export type DiscoveryEvidence = {
@@ -63,6 +73,7 @@ export type DiscoveryEvidence = {
   commands: string[];
   warnings: string[];
   collectedAt: string;
+  commandResults: CommandExecutionResult[];
 };
 
 export type DiscoveryResult = {
@@ -123,6 +134,7 @@ export type WorkloadRecommendation = {
   componentId: string;
   componentName: string;
   kind: WorkloadKind;
+  stack: StackType;
   confidence: number;
   rationale: string[];
   imageTag: string;
@@ -154,6 +166,45 @@ export type ValidationFinding = {
 export type ValidationResult = {
   findings: ValidationFinding[];
   readyForHumanReview: boolean;
+  requiresHumanSignoff: boolean;
+};
+
+export type RepositoryProvider = "github" | "gitlab";
+
+export type RepositoryExportRequest = {
+  provider: RepositoryProvider;
+  owner: string;
+  repository: string;
+  visibility?: "private" | "internal" | "public";
+  dryRun?: boolean;
+};
+
+export type RepositoryExportAction = {
+  kind: "create-repository" | "create-branch" | "push-artifacts" | "open-merge-request";
+  description: string;
+  status: "planned" | "skipped";
+};
+
+export type RepositoryExportResult = {
+  provider: RepositoryProvider;
+  dryRun: boolean;
+  actions: RepositoryExportAction[];
+  warnings: string[];
+};
+
+export type AuditMetadata = {
+  runId: string;
+  startedAt: string;
+  completedAt: string;
+  initiatedBy: string;
+  inputHashSha256: string;
+};
+
+export type HumanSignoffCheckpoint = {
+  requiredApprovers: number;
+  approvalState: "PENDING" | "APPROVED";
+  approvedBy: string[];
+  approvedAt?: string;
 };
 
 export type MigrationRunRequest = {
@@ -161,6 +212,9 @@ export type MigrationRunRequest = {
   runtimeSnapshot: RuntimeSnapshot;
   outDir: string;
   connection?: VmConnection;
+  initiatedBy?: string;
+  signoffRequiredApprovers?: number;
+  exportRequest?: RepositoryExportRequest;
 };
 
 export type MigrationRunResult = {
@@ -169,4 +223,7 @@ export type MigrationRunResult = {
   decomposition: DecompositionResult;
   bundle: ArtifactBundle;
   validation: ValidationResult;
+  audit: AuditMetadata;
+  signoffCheckpoint: HumanSignoffCheckpoint;
+  exportResult?: RepositoryExportResult;
 };

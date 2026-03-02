@@ -3,6 +3,7 @@ import type {
   DiscoveryResult,
   ResourceRecommendation,
   RuntimeProcess,
+  StackType,
   WorkloadKind,
   WorkloadRecommendation,
 } from "./types.js";
@@ -14,10 +15,10 @@ function toComponentId(name: string): string {
 }
 
 function aggregateResources(processes: RuntimeProcess[]): ResourceRecommendation {
-  const cpuPeak = Math.max(...processes.map((p) => p.cpuPercent), 5);
-  const memoryPeak = Math.max(...processes.map((p) => p.memoryMb), 128);
+  const cpuPeak = Math.max(...processes.map((process) => process.cpuPercent), 5);
+  const memoryPeak = Math.max(...processes.map((process) => process.memoryMb), 128);
 
-  const cpuRequestMillicores = Math.max(100, Math.round((cpuPeak * 10) * 0.7));
+  const cpuRequestMillicores = Math.max(100, Math.round(cpuPeak * 10 * 0.7));
   const cpuLimitMillicores = Math.max(cpuRequestMillicores + 100, Math.round(cpuPeak * 10 * 1.4));
   const memoryRequestMb = Math.max(128, Math.round(memoryPeak * 0.75));
   const memoryLimitMb = Math.max(memoryRequestMb + 128, Math.round(memoryPeak * 1.5));
@@ -36,7 +37,7 @@ function hasPersistentWrites(processes: RuntimeProcess[]): boolean {
   );
 }
 
-function buildRationale(kind: WorkloadKind, flags: { persistent: boolean; scheduled: boolean }): string[] {
+function buildRationale(kind: WorkloadKind, flags: { persistent: boolean; scheduled: boolean; stack: StackType }): string[] {
   const rationale: string[] = [];
 
   if (flags.scheduled) {
@@ -45,6 +46,10 @@ function buildRationale(kind: WorkloadKind, flags: { persistent: boolean; schedu
 
   if (flags.persistent) {
     rationale.push("Detected persistent file writes under stateful filesystem paths.");
+  }
+
+  if (flags.stack !== "unknown") {
+    rationale.push(`Detected application stack: ${flags.stack}.`);
   }
 
   if (kind === "Deployment") {
@@ -77,12 +82,33 @@ function isJobMappedToComponent(componentName: string, componentCommands: string
   return normalizedJob.includes(normalizedName);
 }
 
-function confidenceFor(kind: WorkloadKind, persistent: boolean, scheduled: boolean): number {
-  let confidence = 0.82;
+function detectStackFromCommands(commands: string[]): StackType {
+  for (const rawCommand of commands) {
+    const command = rawCommand.toLowerCase();
+    if (command.includes("java") || command.includes("spring") || command.includes(".jar")) return "java-spring";
+    if (command.includes("dotnet") || command.includes(".dll")) return "dotnet";
+    if (command.includes("node") || command.includes("npm") || command.includes("yarn")) return "nodejs";
+    if (command.includes("python") || command.includes("gunicorn") || command.includes("uvicorn")) return "python";
+  }
+  return "unknown";
+}
+
+function detectStackForComponent(processes: RuntimeProcess[], discovery: DiscoveryResult): StackType {
+  const fromCommands = detectStackFromCommands(processes.map((process) => process.command));
+  if (fromCommands !== "unknown") return fromCommands;
+
+  const discoveredStacks = discovery.runtime.source?.detectedStacks ?? [];
+  const preferred = discoveredStacks.find((stack) => stack !== "unknown");
+  return preferred ?? "unknown";
+}
+
+function confidenceFor(kind: WorkloadKind, persistent: boolean, scheduled: boolean, stack: StackType): number {
+  let confidence = 0.8;
 
   if (kind === "CronJob" && scheduled) confidence += 0.1;
   if (kind === "StatefulSet" && persistent) confidence += 0.08;
   if (kind === "Deployment" && !persistent && !scheduled) confidence += 0.08;
+  if (stack !== "unknown") confidence += 0.04;
 
   if (persistent && scheduled) confidence -= 0.08;
 
@@ -109,9 +135,11 @@ export function decomposeRuntime(discovery: DiscoveryResult): DecompositionResul
     const scheduledJobs = discovery.runtime.scheduledJobs.filter((job) =>
       isJobMappedToComponent(name, componentCommands, job.command)
     );
+
     const scheduled = scheduledJobs.length > 0;
     const kind = detectKind(persistent, scheduled);
-    const confidence = confidenceFor(kind, persistent, scheduled);
+    const stack = detectStackForComponent(processes, discovery);
+    const confidence = confidenceFor(kind, persistent, scheduled, stack);
 
     if (persistent && kind === "Deployment") {
       blockers.push(`${name}: persistent writes detected but classified as Deployment.`);
@@ -130,8 +158,9 @@ export function decomposeRuntime(discovery: DiscoveryResult): DecompositionResul
       componentId: toComponentId(name),
       componentName: name,
       kind,
+      stack,
       confidence,
-      rationale: buildRationale(kind, { persistent, scheduled }),
+      rationale: buildRationale(kind, { persistent, scheduled, stack }),
       imageTag: `${toComponentId(name)}:latest`,
       ports,
       resourceRecommendation: aggregateResources(processes),
@@ -140,7 +169,7 @@ export function decomposeRuntime(discovery: DiscoveryResult): DecompositionResul
     });
   }
 
-  recommendations.sort((a, b) => a.componentName.localeCompare(b.componentName));
+  recommendations.sort((left, right) => left.componentName.localeCompare(right.componentName));
 
   return {
     recommendations,

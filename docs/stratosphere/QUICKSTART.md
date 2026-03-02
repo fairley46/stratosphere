@@ -10,6 +10,18 @@ npm run stratosphere -- \
   --out-dir artifacts/stratosphere
 ```
 
+## Generate with audit and export planning
+
+```bash
+npm run stratosphere -- \
+  --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --initiated-by platform-team \
+  --signoff-required-approvers 2 \
+  --export-provider github \
+  --export-owner my-org \
+  --export-repo billing-migration
+```
+
 ## Optional: include SSH connection metadata
 
 ```bash
@@ -31,6 +43,12 @@ npm run stratosphere -- --print-ssh-commands
 
 ```bash
 npm run mcp:start
+```
+
+## Run tests
+
+```bash
+npm run test
 ```
 
 ## Generated bundle

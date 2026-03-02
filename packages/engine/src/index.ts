@@ -4,5 +4,6 @@ export * from "./graph.js";
 export * from "./decompose.js";
 export * from "./generate.js";
 export * from "./validate.js";
+export * from "./repository-export.js";
 export * from "./export.js";
 export * from "./orchestrator.js";

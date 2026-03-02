@@ -5,6 +5,7 @@ import {
   runMigrationPipeline,
   summarizeRun,
   type MigrationRunRequest,
+  type RepositoryExportRequest,
   type RuntimeSnapshot,
   type VmConnection,
 } from "@stratosphere/engine";
@@ -53,6 +54,16 @@ function getBool(args: ArgMap, key: string): boolean {
   return false;
 }
 
+function getOptionalNumber(args: ArgMap, key: string): number | undefined {
+  const raw = getOptionalString(args, key);
+  if (!raw) return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`--${key} must be a number`);
+  }
+  return parsed;
+}
+
 function loadSnapshot(runtimeFile: string): RuntimeSnapshot {
   const raw = readFileSync(runtimeFile, "utf8");
   return JSON.parse(raw) as RuntimeSnapshot;
@@ -64,17 +75,39 @@ function parseConnection(args: ArgMap): VmConnection | undefined {
 
   if (!host || !user) return undefined;
 
-  const portRaw = getOptionalString(args, "ssh-port");
-  const port = portRaw ? Number.parseInt(portRaw, 10) : undefined;
-  if (portRaw && Number.isNaN(port)) {
-    throw new Error("--ssh-port must be a number");
-  }
+  const port = getOptionalNumber(args, "ssh-port");
 
   return {
     host,
     user,
     port,
     privateKeyPath: getOptionalString(args, "ssh-key"),
+  };
+}
+
+function parseExportRequest(args: ArgMap): RepositoryExportRequest | undefined {
+  const provider = getOptionalString(args, "export-provider");
+  if (!provider) return undefined;
+
+  if (provider !== "github" && provider !== "gitlab") {
+    throw new Error("--export-provider must be one of: github, gitlab");
+  }
+
+  const owner = getString(args, "export-owner");
+  const repository = getString(args, "export-repo");
+  const visibility = getOptionalString(args, "export-visibility");
+
+  if (visibility && visibility !== "private" && visibility !== "internal" && visibility !== "public") {
+    throw new Error("--export-visibility must be one of: private, internal, public");
+  }
+  const validatedVisibility = visibility as "private" | "internal" | "public" | undefined;
+
+  return {
+    provider,
+    owner,
+    repository,
+    visibility: validatedVisibility,
+    dryRun: getBool(args, "export-execute") ? false : true,
   };
 }
 
@@ -88,6 +121,9 @@ function buildRequest(args: ArgMap): MigrationRunRequest {
     runtimeSnapshot,
     outDir: resolve(INVOKE_CWD, getString(args, "out-dir", "artifacts/stratosphere")),
     connection: parseConnection(args),
+    initiatedBy: getOptionalString(args, "initiated-by"),
+    signoffRequiredApprovers: getOptionalNumber(args, "signoff-required-approvers"),
+    exportRequest: parseExportRequest(args),
   };
 }
 
@@ -99,7 +135,10 @@ Usage:
 
 Optional:
   --migration-id <id>
+  --initiated-by <name>
+  --signoff-required-approvers <n>
   --ssh-host <host> --ssh-user <user> [--ssh-port <port>] [--ssh-key <path>]
+  --export-provider <github|gitlab> --export-owner <owner> --export-repo <repo> [--export-visibility <private|internal|public>] [--export-execute]
   --print-ssh-commands
 `);
 }
@@ -124,6 +163,12 @@ async function main(): Promise<void> {
 
   console.log(`Migration package generated at ${request.outDir}`);
   console.log(summarizeRun(result));
+
+  if (result.exportResult) {
+    console.log(
+      `repositoryExport provider=${result.exportResult.provider} dryRun=${result.exportResult.dryRun} actions=${result.exportResult.actions.length}`
+    );
+  }
 }
 
 main().catch((error: unknown) => {

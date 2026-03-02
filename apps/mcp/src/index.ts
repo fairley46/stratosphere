@@ -4,9 +4,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   getSshDiscoveryCommandSet,
+  previewDecomposition,
   runMigrationPipeline,
   summarizeRun,
+  validateBundleDirectory,
   type MigrationRunRequest,
+  type RepositoryExportRequest,
   type RuntimeSnapshot,
   type VmConnection,
 } from "@stratosphere/engine";
@@ -14,7 +17,7 @@ import { z } from "zod";
 
 const server = new McpServer({
   name: "stratosphere",
-  version: "0.1.0",
+  version: "0.2.0",
 });
 
 function loadRuntimeSnapshot(filePath: string): RuntimeSnapshot {
@@ -37,6 +40,49 @@ function buildConnection(
   };
 }
 
+function buildExportRequest(
+  provider?: "github" | "gitlab",
+  owner?: string,
+  repository?: string,
+  visibility?: "private" | "internal" | "public",
+  exportExecute?: boolean
+): RepositoryExportRequest | undefined {
+  if (!provider) return undefined;
+  if (!owner || !repository) {
+    throw new Error("export_owner and export_repo are required when export_provider is provided.");
+  }
+
+  return {
+    provider,
+    owner,
+    repository,
+    visibility,
+    dryRun: exportExecute ? false : true,
+  };
+}
+
+function fail(code: string, message: string, details?: Record<string, unknown>) {
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: JSON.stringify(
+          {
+            error: {
+              code,
+              message,
+              details: details ?? {},
+            },
+          },
+          null,
+          2
+        ),
+      },
+    ],
+    isError: true,
+  };
+}
+
 server.tool(
   "generate_migration_bundle",
   "Generate a Stratosphere migration bundle from a VM runtime snapshot JSON file.",
@@ -44,12 +90,36 @@ server.tool(
     runtime_file: z.string().describe("Path to runtime snapshot JSON"),
     out_dir: z.string().default("artifacts/stratosphere").describe("Output directory for generated bundle"),
     migration_id: z.string().optional().describe("Optional migration id override"),
+    initiated_by: z.string().optional().describe("Operator name for audit trail"),
+    signoff_required_approvers: z.number().optional().describe("Required number of approvers for sign-off"),
     ssh_host: z.string().optional().describe("Optional SSH host metadata"),
     ssh_user: z.string().optional().describe("Optional SSH user metadata"),
     ssh_port: z.number().optional().describe("Optional SSH port metadata"),
     ssh_key: z.string().optional().describe("Optional SSH private key path metadata"),
+    export_provider: z.enum(["github", "gitlab"]).optional().describe("Optional export provider"),
+    export_owner: z.string().optional().describe("Repository owner/group"),
+    export_repo: z.string().optional().describe("Repository name"),
+    export_visibility: z.enum(["private", "internal", "public"]).optional().describe("Repository visibility"),
+    export_execute: z.boolean().optional().describe("Set true to request non-dry-run export actions"),
   },
-  async ({ runtime_file, out_dir, migration_id, ssh_host, ssh_user, ssh_port, ssh_key }) => {
+  async (input) => {
+    const {
+      runtime_file,
+      out_dir,
+      migration_id,
+      initiated_by,
+      signoff_required_approvers,
+      ssh_host,
+      ssh_user,
+      ssh_port,
+      ssh_key,
+      export_provider,
+      export_owner,
+      export_repo,
+      export_visibility,
+      export_execute,
+    } = input;
+
     try {
       const runtimeFile = resolve(runtime_file);
       const outputDir = resolve(out_dir);
@@ -59,43 +129,53 @@ server.tool(
         migrationId: migration_id ?? runtimeSnapshot.host.hostname,
         runtimeSnapshot,
         outDir: outputDir,
+        initiatedBy: initiated_by,
+        signoffRequiredApprovers: signoff_required_approvers,
         connection: buildConnection(ssh_host, ssh_user, ssh_port, ssh_key),
+        exportRequest: buildExportRequest(
+          export_provider,
+          export_owner,
+          export_repo,
+          export_visibility,
+          export_execute
+        ),
       };
 
       const result = await runMigrationPipeline(request);
 
-      const response = {
-        migrationId: request.migrationId,
-        outDir: outputDir,
-        summary: summarizeRun(result),
-        recommendations: result.decomposition.recommendations.map((item) => ({
-          component: item.componentName,
-          kind: item.kind,
-          confidence: item.confidence,
-          dependencies: item.dependencies,
-        })),
-        blockers: result.decomposition.blockers,
-        validation: result.validation,
-      };
-
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(response, null, 2),
+            text: JSON.stringify(
+              {
+                migrationId: request.migrationId,
+                outDir: outputDir,
+                summary: summarizeRun(result),
+                recommendations: result.decomposition.recommendations.map((item) => ({
+                  component: item.componentName,
+                  kind: item.kind,
+                  stack: item.stack,
+                  confidence: item.confidence,
+                  rationale: item.rationale,
+                  dependencies: item.dependencies,
+                })),
+                blockers: result.decomposition.blockers,
+                validation: result.validation,
+                signoffCheckpoint: result.signoffCheckpoint,
+                exportResult: result.exportResult,
+              },
+              null,
+              2
+            ),
           },
         ],
       };
     } catch (error) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Stratosphere MCP failed: ${String(error)}`,
-          },
-        ],
-        isError: true,
-      };
+      return fail("MIGRATION_GENERATION_FAILED", String(error), {
+        runtime_file,
+        out_dir,
+      });
     }
   }
 );
@@ -112,6 +192,82 @@ server.tool(
       },
     ],
   })
+);
+
+server.tool(
+  "validate_migration_bundle",
+  "Validate an existing generated migration bundle without regenerating artifacts.",
+  {
+    bundle_dir: z.string().describe("Path to generated bundle directory"),
+  },
+  async ({ bundle_dir }) => {
+    try {
+      const bundleDir = resolve(bundle_dir);
+      const validation = validateBundleDirectory(bundleDir);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                bundleDir,
+                validation,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return fail("BUNDLE_VALIDATION_FAILED", String(error), { bundle_dir });
+    }
+  }
+);
+
+server.tool(
+  "explain_decomposition",
+  "Preview decomposition rationale and confidence from a runtime snapshot without writing artifacts.",
+  {
+    runtime_file: z.string().describe("Path to runtime snapshot JSON"),
+    migration_id: z.string().optional().describe("Optional migration id override"),
+  },
+  async ({ runtime_file, migration_id }) => {
+    try {
+      const runtimeFile = resolve(runtime_file);
+      const runtimeSnapshot = loadRuntimeSnapshot(runtimeFile);
+      const preview = previewDecomposition(migration_id ?? runtimeSnapshot.host.hostname, runtimeSnapshot);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                migrationId: migration_id ?? runtimeSnapshot.host.hostname,
+                graph: {
+                  nodes: preview.graph.nodes.length,
+                  edges: preview.graph.edges.length,
+                },
+                recommendations: preview.decomposition.recommendations.map((item) => ({
+                  component: item.componentName,
+                  kind: item.kind,
+                  stack: item.stack,
+                  confidence: item.confidence,
+                  rationale: item.rationale,
+                })),
+                blockers: preview.decomposition.blockers,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return fail("DECOMPOSITION_PREVIEW_FAILED", String(error), { runtime_file });
+    }
+  }
 );
 
 const transport = new StdioServerTransport();

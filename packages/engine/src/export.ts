@@ -2,17 +2,19 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type {
   ArtifactBundle,
+  AuditMetadata,
   DecompositionResult,
   DiscoveryResult,
+  HumanSignoffCheckpoint,
   MigrationRunResult,
+  RepositoryExportResult,
   ValidationResult,
   VmDnaGraph,
 } from "./types.js";
 
 function writeArtifact(outDir: string, path: string, content: string): void {
   const target = join(outDir, path);
-  const parent = dirname(target);
-  mkdirSync(parent, { recursive: true });
+  mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, content, "utf8");
 }
 
@@ -26,8 +28,8 @@ function blueGreenRunbook(decomposition: DecompositionResult): string {
   lines.push("- Maintain rollback path to blue environment until acceptance sign-off.");
   lines.push("");
   lines.push("## Workloads in Scope");
-  for (const rec of decomposition.recommendations) {
-    lines.push(`- ${rec.componentName} -> ${rec.kind} (confidence ${rec.confidence})`);
+  for (const recommendation of decomposition.recommendations) {
+    lines.push(`- ${recommendation.componentName} -> ${recommendation.kind} (confidence ${recommendation.confidence})`);
   }
   lines.push("");
   lines.push("## Cutover Steps");
@@ -45,23 +47,53 @@ function blueGreenRunbook(decomposition: DecompositionResult): string {
   return `${lines.join("\n")}\n`;
 }
 
+function signoffTemplate(checkpoint: HumanSignoffCheckpoint): string {
+  return `# Human Sign-Off Checkpoint
+
+- Approval state: ${checkpoint.approvalState}
+- Required approvers: ${checkpoint.requiredApprovers}
+- Current approvers: ${checkpoint.approvedBy.length}
+
+## Required Reviewers
+- Application owner
+- Platform owner
+- Security reviewer
+
+## Approval Record
+| Name | Role | Approved At |
+|------|------|-------------|
+|      |      |             |
+
+## Final Decision
+- [ ] Approved for blue/green deployment execution
+- [ ] Rejected pending remediation
+`;
+}
+
 function writeSummary(
   outDir: string,
   discovery: DiscoveryResult,
   graph: VmDnaGraph,
   decomposition: DecompositionResult,
-  validation: ValidationResult
+  validation: ValidationResult,
+  audit: AuditMetadata,
+  signoffCheckpoint: HumanSignoffCheckpoint,
+  exportResult?: RepositoryExportResult
 ): void {
   const summary = {
+    runId: audit.runId,
     collectedAt: discovery.evidence.collectedAt,
     collector: discovery.evidence.collector,
     workloadCount: decomposition.recommendations.length,
     blockers: decomposition.blockers,
     validation,
+    signoffCheckpoint,
+    exportResult,
     graph: {
       nodes: graph.nodes.length,
       edges: graph.edges.length,
     },
+    audit,
   };
 
   writeArtifact(outDir, "reports/migration-summary.json", JSON.stringify(summary, null, 2));
@@ -73,7 +105,10 @@ export function exportBundle(
   discovery: DiscoveryResult,
   graph: VmDnaGraph,
   decomposition: DecompositionResult,
-  validation: ValidationResult
+  validation: ValidationResult,
+  audit: AuditMetadata,
+  signoffCheckpoint: HumanSignoffCheckpoint,
+  exportResult?: RepositoryExportResult
 ): void {
   mkdirSync(outDir, { recursive: true });
 
@@ -83,16 +118,25 @@ export function exportBundle(
 
   writeArtifact(outDir, "reports/vm-dna-graph.json", JSON.stringify(graph, null, 2));
   writeArtifact(outDir, "reports/validation.json", JSON.stringify(validation, null, 2));
+  writeArtifact(outDir, "reports/audit.json", JSON.stringify(audit, null, 2));
+  writeArtifact(outDir, "reports/signoff-checkpoint.json", JSON.stringify(signoffCheckpoint, null, 2));
+  writeArtifact(outDir, "reports/signoff-template.md", signoffTemplate(signoffCheckpoint));
+  if (exportResult) {
+    writeArtifact(outDir, "reports/repository-export.json", JSON.stringify(exportResult, null, 2));
+  }
+
   writeArtifact(outDir, "reports/blue-green-runbook.md", blueGreenRunbook(decomposition));
-  writeSummary(outDir, discovery, graph, decomposition, validation);
+  writeSummary(outDir, discovery, graph, decomposition, validation, audit, signoffCheckpoint, exportResult);
 }
 
 export function summarizeRun(result: MigrationRunResult): string {
   return [
+    `runId=${result.audit.runId}`,
     `collector=${result.discovery.evidence.collector}`,
     `workloads=${result.decomposition.recommendations.length}`,
     `blockers=${result.decomposition.blockers.length}`,
     `findings=${result.validation.findings.length}`,
     `readyForHumanReview=${result.validation.readyForHumanReview}`,
+    `signoff=${result.signoffCheckpoint.approvalState}`,
   ].join(" ");
 }
