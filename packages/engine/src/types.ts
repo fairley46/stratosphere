@@ -194,6 +194,42 @@ export type RepositoryExportResult = {
   warnings: string[];
 };
 
+export type BusinessCriticality = "low" | "medium" | "high";
+export type DowntimeTolerance = "none" | "limited" | "flexible";
+
+export type BusinessIntake = {
+  applicationName: string;
+  businessOwner: string;
+  technicalOwner?: string;
+  criticality: BusinessCriticality;
+  downtimeTolerance: DowntimeTolerance;
+  complianceNeeds: string[];
+  vendorOwned: boolean;
+  approvalContacts: string[];
+  notes?: string;
+};
+
+export type WorkspaceAssetType = "vm" | "database" | "queue" | "external-service";
+
+export type WorkspaceAsset = {
+  id: string;
+  type: WorkspaceAssetType;
+  name: string;
+  description?: string;
+};
+
+export type WorkspaceRelationship = {
+  fromAssetId: string;
+  toAssetId: string;
+  description?: string;
+};
+
+export type ApplicationWorkspace = {
+  workspaceName: string;
+  assets: WorkspaceAsset[];
+  relationships: WorkspaceRelationship[];
+};
+
 export type AuditMetadata = {
   runId: string;
   startedAt: string;
@@ -248,6 +284,8 @@ export type MigrationRunRequest = {
   initiatedBy?: string;
   signoffRequiredApprovers?: number;
   exportRequest?: RepositoryExportRequest;
+  intake?: BusinessIntake;
+  workspace?: ApplicationWorkspace;
 };
 
 export type MigrationRunResult = {
@@ -260,4 +298,6 @@ export type MigrationRunResult = {
   audit: AuditMetadata;
   signoffCheckpoint: HumanSignoffCheckpoint;
   exportResult?: RepositoryExportResult;
+  intake?: BusinessIntake;
+  workspace?: ApplicationWorkspace;
 };

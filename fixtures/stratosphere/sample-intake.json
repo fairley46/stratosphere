@@ -1,0 +1,11 @@
+{
+  "applicationName": "Billing Platform",
+  "businessOwner": "Finance Operations",
+  "technicalOwner": "Platform Engineering",
+  "criticality": "high",
+  "downtimeTolerance": "limited",
+  "complianceNeeds": ["pci"],
+  "vendorOwned": false,
+  "approvalContacts": ["app-owner@acme.com", "platform-owner@acme.com"],
+  "notes": "Prefer blue/green cutover outside business hours."
+}

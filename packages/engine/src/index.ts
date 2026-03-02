@@ -1,9 +1,12 @@
 export * from "./types.js";
 export * from "./errors.js";
+export * from "./intake.js";
 export * from "./discovery.js";
 export * from "./graph.js";
 export * from "./decompose.js";
 export * from "./generate.js";
+export * from "./source-analysis.js";
+export * from "./profile.js";
 export { buildApplicationMaps } from "./maps.js";
 export * from "./validate.js";
 export * from "./repository-export.js";

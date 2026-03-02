@@ -105,6 +105,25 @@ This backlog prioritizes non-technical user experience so long-running app owner
 2. Add P0 features 4, 5, and 6 (decision quality + governance).
 3. Deliver P1/P2 based on pilot feedback and adoption blockers.
 
+## Phase 1-3 Kickoff Status (March 2, 2026)
+
+Implemented kickoff foundations:
+- Phase 1:
+  - JSON-based guided intake model + validation.
+  - JSON-based application workspace model + validation.
+  - Plain-language executive summary artifact for non-technical stakeholders.
+- Phase 2:
+  - Initial source-analysis report (`runtime -> component mapping hints`).
+  - Initial runtime profile summary report (top CPU/memory process view).
+- Phase 3:
+  - Vendor-owned advisory blocker injection into decomposition workflow.
+
+Remaining in these phases:
+- UI/agent-driven guided wizard experience (current intake is file-driven).
+- Deeper source-code analyzers by stack and build system.
+- Time-window profiler and variance/confidence modeling.
+- Full governance workflow service/API beyond file-level sign-off outputs.
+
 ## Unified Roadmap by Section (Original Scope + Backlog)
 
 This section merges the original v1 scope gaps with backlog additions into one execution list.

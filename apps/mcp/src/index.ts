@@ -4,6 +4,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   StratosphereError,
+  validateApplicationWorkspace,
+  validateBusinessIntake,
   buildApplicationMaps,
   getSshDiscoveryCommandSet,
   previewDecomposition,
@@ -13,6 +15,8 @@ import {
   validateBundleDirectory,
   type MigrationRunRequest,
   type RepositoryExportRequest,
+  type ApplicationWorkspace,
+  type BusinessIntake,
   type RuntimeSnapshot,
   type VmConnection,
 } from "@stratosphere/engine";
@@ -24,24 +28,29 @@ const server = new McpServer({
 });
 
 function loadRuntimeSnapshot(filePath: string): RuntimeSnapshot {
+  const payload = loadJsonFile(filePath, "runtime snapshot");
+  return payload as RuntimeSnapshot;
+}
+
+function loadJsonFile(filePath: string, label: string): unknown {
   let payload: string;
   try {
     payload = readFileSync(filePath, "utf8");
   } catch (error) {
     throw new StratosphereError({
       code: "FILE_READ_FAILED",
-      message: `Unable to read runtime snapshot file: ${filePath}`,
+      message: `Unable to read ${label} file: ${filePath}`,
       hint: "Check that the file exists and is readable by the MCP process.",
       details: { filePath, reason: String(error) },
     });
   }
 
   try {
-    return JSON.parse(payload) as RuntimeSnapshot;
+    return JSON.parse(payload) as unknown;
   } catch (error) {
     throw new StratosphereError({
       code: "JSON_PARSE_FAILED",
-      message: `Invalid JSON in runtime snapshot file: ${filePath}`,
+      message: `Invalid JSON in ${label} file: ${filePath}`,
       hint: "Fix JSON syntax and ensure runtime snapshot schema fields exist.",
       details: { filePath, reason: String(error) },
     });
@@ -138,11 +147,23 @@ function fail(error: unknown, fallbackCode: string, fallbackDetails?: Record<str
   };
 }
 
+function loadIntake(filePath?: string): BusinessIntake | undefined {
+  if (!filePath) return undefined;
+  return validateBusinessIntake(loadJsonFile(filePath, "intake"));
+}
+
+function loadWorkspace(filePath?: string): ApplicationWorkspace | undefined {
+  if (!filePath) return undefined;
+  return validateApplicationWorkspace(loadJsonFile(filePath, "workspace"));
+}
+
 server.tool(
   "generate_migration_bundle",
   "Generate a Stratosphere migration bundle from runtime snapshot input, SSH interrogation, or local VM discovery.",
   {
     runtime_file: z.string().optional().describe("Optional path to runtime snapshot JSON"),
+    intake_file: z.string().optional().describe("Optional path to business intake JSON"),
+    workspace_file: z.string().optional().describe("Optional path to application workspace JSON"),
     local_discovery: z.boolean().optional().describe("Run read-only discovery directly on the host running this MCP server"),
     out_dir: z.string().default("artifacts/stratosphere").describe("Output directory for generated bundle"),
     migration_id: z.string().optional().describe("Optional migration id override"),
@@ -161,6 +182,8 @@ server.tool(
   async (input) => {
     const {
       runtime_file,
+      intake_file,
+      workspace_file,
       local_discovery,
       out_dir,
       migration_id,
@@ -179,8 +202,12 @@ server.tool(
 
     try {
       const runtimeFile = runtime_file ? resolve(runtime_file) : undefined;
+      const intakeFile = intake_file ? resolve(intake_file) : undefined;
+      const workspaceFile = workspace_file ? resolve(workspace_file) : undefined;
       const outputDir = resolve(out_dir);
       const runtimeSnapshot = runtimeFile ? loadRuntimeSnapshot(runtimeFile) : undefined;
+      const intake = loadIntake(intakeFile);
+      const workspace = loadWorkspace(workspaceFile);
       const connection = buildConnection(ssh_host, ssh_user, ssh_port, ssh_key);
       const discoveryMode = local_discovery ? "local" : connection ? "ssh" : "snapshot";
       const signoffRequiredApprovers = validateSignoffApprovers(signoff_required_approvers);
@@ -210,6 +237,8 @@ server.tool(
         initiatedBy: initiated_by,
         signoffRequiredApprovers,
         connection: local_discovery ? undefined : connection,
+        intake,
+        workspace,
         exportRequest: buildExportRequest(
           export_provider,
           export_owner,
@@ -243,6 +272,8 @@ server.tool(
                   currentStateSummary: result.applicationMaps.currentState.summary,
                   futureStateSummary: result.applicationMaps.futureState.summary,
                 },
+                intake: result.intake,
+                workspace: result.workspace,
                 validation: result.validation,
                 signoffCheckpoint: result.signoffCheckpoint,
                 exportResult: result.exportResult,
@@ -256,6 +287,8 @@ server.tool(
     } catch (error) {
       return fail(error, "MIGRATION_GENERATION_FAILED", {
         runtime_file,
+        intake_file,
+        workspace_file,
         local_discovery,
         out_dir,
       });
@@ -284,13 +317,17 @@ server.tool(
     out_dir: z.string().default("artifacts/stratosphere").describe("Output directory for generated bundle"),
     migration_id: z.string().optional().describe("Optional migration id override"),
     runtime_file: z.string().optional().describe("Optional runtime snapshot fallback file"),
+    intake_file: z.string().optional().describe("Optional path to business intake JSON"),
+    workspace_file: z.string().optional().describe("Optional path to application workspace JSON"),
     initiated_by: z.string().optional().describe("Operator name for audit trail"),
     signoff_required_approvers: z.number().optional().describe("Required number of approvers for sign-off"),
   },
-  async ({ out_dir, migration_id, runtime_file, initiated_by, signoff_required_approvers }) => {
+  async ({ out_dir, migration_id, runtime_file, intake_file, workspace_file, initiated_by, signoff_required_approvers }) => {
     try {
       const outputDir = resolve(out_dir);
       const runtimeSnapshot = runtime_file ? loadRuntimeSnapshot(resolve(runtime_file)) : undefined;
+      const intake = intake_file ? loadIntake(resolve(intake_file)) : undefined;
+      const workspace = workspace_file ? loadWorkspace(resolve(workspace_file)) : undefined;
       const signoffRequiredApprovers = validateSignoffApprovers(signoff_required_approvers);
 
       const request: MigrationRunRequest = {
@@ -300,6 +337,8 @@ server.tool(
         discoveryMode: "local",
         initiatedBy: initiated_by,
         signoffRequiredApprovers,
+        intake,
+        workspace,
       };
 
       const result = await runMigrationPipeline(request);
@@ -316,6 +355,8 @@ server.tool(
                   currentStateSummary: result.applicationMaps.currentState.summary,
                   futureStateSummary: result.applicationMaps.futureState.summary,
                 },
+                intake: result.intake,
+                workspace: result.workspace,
                 validation: result.validation,
                 signoffCheckpoint: result.signoffCheckpoint,
               },
@@ -329,6 +370,8 @@ server.tool(
       return fail(error, "LOCAL_VM_GENERATION_FAILED", {
         out_dir,
         runtime_file,
+        intake_file,
+        workspace_file,
       });
     }
   }

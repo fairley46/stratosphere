@@ -30,6 +30,9 @@ Outputs include Dockerfiles, Helm templates, Terraform scaffolding, VM DNA repor
 Each run now also includes:
 - `reports/application-map-current.md` (how it works today)
 - `reports/application-map-future.md` (proposed future architecture map)
+- `reports/executive-summary.md` (plain-language migration summary for app owners)
+- `reports/runtime-profile-summary.json` (process-level sizing summary)
+- `reports/source-analysis.json` (runtime-to-source component mapping hints)
 
 ## Local VM Discovery (No SSH)
 
@@ -44,6 +47,8 @@ npm run stratosphere -- --local-discovery --out-dir artifacts/stratosphere
 - `snapshot`: provide `--runtime-file` JSON
 - `local`: provide `--local-discovery` (runs read-only commands on the same VM)
 - `ssh`: provide `--ssh-host` + `--ssh-user` (optional `--ssh-port`, `--ssh-key`)
+- optional business context: `--intake-file fixtures/stratosphere/sample-intake.json`
+- optional application scope: `--workspace-file fixtures/stratosphere/sample-workspace.json`
 
 CLI validates conflicting/missing flags and returns structured errors with:
 - `code`

@@ -1,0 +1,32 @@
+{
+  "workspaceName": "billing-app",
+  "assets": [
+    {
+      "id": "vm-billing-01",
+      "type": "vm",
+      "name": "Billing App VM"
+    },
+    {
+      "id": "db-billing",
+      "type": "database",
+      "name": "Billing PostgreSQL"
+    },
+    {
+      "id": "queue-retry",
+      "type": "queue",
+      "name": "Retry Queue"
+    }
+  ],
+  "relationships": [
+    {
+      "fromAssetId": "vm-billing-01",
+      "toAssetId": "db-billing",
+      "description": "Reads and writes billing records"
+    },
+    {
+      "fromAssetId": "vm-billing-01",
+      "toAssetId": "queue-retry",
+      "description": "Pushes retry jobs for failed invoice processing"
+    }
+  ]
+}

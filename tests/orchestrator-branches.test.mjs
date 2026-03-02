@@ -62,6 +62,27 @@ test("runMigrationPipeline defaults initiatedBy and supports undefined discovery
   rmSync(outDir, { recursive: true, force: true });
 });
 
+test("runMigrationPipeline marks vendor-owned workloads as advisory-only blockers", async () => {
+  const outDir = mkdtempSync(join(tmpdir(), "strat-orch-vendor-"));
+  const result = await runMigrationPipeline({
+    migrationId: "orchestrator-vendor",
+    runtimeSnapshot: fixture,
+    outDir,
+    intake: {
+      applicationName: "Vendor ERP",
+      businessOwner: "Operations",
+      criticality: "high",
+      downtimeTolerance: "limited",
+      complianceNeeds: [],
+      vendorOwned: true,
+      approvalContacts: ["ops@acme.com"],
+    },
+  });
+
+  assert.ok(result.decomposition.blockers.some((item) => item.includes("Vendor-owned application detected")));
+  rmSync(outDir, { recursive: true, force: true });
+});
+
 test("runMigrationPipeline rejects snapshot mode without runtime", async () => {
   await assert.rejects(
     () =>

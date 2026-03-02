@@ -112,6 +112,11 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
 
   const graph = buildVmDnaGraph(request.migrationId, discovery);
   const decomposition = decomposeRuntime(discovery);
+  if (request.intake?.vendorOwned) {
+    decomposition.blockers.push(
+      "Vendor-owned application detected. Advisory-only mode: validate recommendations with vendor before implementation."
+    );
+  }
   const applicationMaps = buildApplicationMaps(graph, discovery, decomposition);
   const bundle = generateArtifacts(request.migrationId, discovery, decomposition);
   const validation = validateBundle(bundle, decomposition);
@@ -129,6 +134,8 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     validation,
     audit,
     signoffCheckpoint,
+    intake: request.intake,
+    workspace: request.workspace,
     exportResult,
   };
 
@@ -142,6 +149,8 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     validation,
     audit,
     signoffCheckpoint,
+    request.intake,
+    request.workspace,
     exportResult
   );
 

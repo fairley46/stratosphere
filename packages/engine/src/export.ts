@@ -1,9 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { buildExecutiveSummary } from "./intake.js";
+import { buildRuntimeProfileSummary } from "./profile.js";
+import { buildSourceAnalysis } from "./source-analysis.js";
 import type {
+  ApplicationWorkspace,
   ApplicationMaps,
   ArtifactBundle,
   AuditMetadata,
+  BusinessIntake,
   DecompositionResult,
   DiscoveryResult,
   HumanSignoffCheckpoint,
@@ -80,6 +85,8 @@ function writeSummary(
   validation: ValidationResult,
   audit: AuditMetadata,
   signoffCheckpoint: HumanSignoffCheckpoint,
+  intake?: BusinessIntake,
+  workspace?: ApplicationWorkspace,
   exportResult?: RepositoryExportResult
 ): void {
   const summary = {
@@ -94,11 +101,15 @@ function writeSummary(
     },
     validation,
     signoffCheckpoint,
+    intake,
+    workspace,
     exportResult,
     graph: {
       nodes: graph.nodes.length,
       edges: graph.edges.length,
     },
+    runtimeProfile: buildRuntimeProfileSummary(discovery),
+    sourceAnalysis: buildSourceAnalysis(discovery, decomposition),
     audit,
   };
 
@@ -115,6 +126,8 @@ export function exportBundle(
   validation: ValidationResult,
   audit: AuditMetadata,
   signoffCheckpoint: HumanSignoffCheckpoint,
+  intake?: BusinessIntake,
+  workspace?: ApplicationWorkspace,
   exportResult?: RepositoryExportResult
 ): void {
   mkdirSync(outDir, { recursive: true });
@@ -124,6 +137,8 @@ export function exportBundle(
   }
 
   writeArtifact(outDir, "reports/vm-dna-graph.json", JSON.stringify(graph, null, 2));
+  writeArtifact(outDir, "reports/runtime-profile-summary.json", JSON.stringify(buildRuntimeProfileSummary(discovery), null, 2));
+  writeArtifact(outDir, "reports/source-analysis.json", JSON.stringify(buildSourceAnalysis(discovery, decomposition), null, 2));
   writeArtifact(outDir, "reports/application-map-current.md", applicationMaps.currentState.markdown);
   writeArtifact(outDir, "reports/application-map-current.mmd", applicationMaps.currentState.mermaid);
   writeArtifact(outDir, "reports/application-map-current-summary.json", JSON.stringify(applicationMaps.currentState.summary, null, 2));
@@ -134,9 +149,26 @@ export function exportBundle(
   writeArtifact(outDir, "reports/audit.json", JSON.stringify(audit, null, 2));
   writeArtifact(outDir, "reports/signoff-checkpoint.json", JSON.stringify(signoffCheckpoint, null, 2));
   writeArtifact(outDir, "reports/signoff-template.md", signoffTemplate(signoffCheckpoint));
+  if (intake) {
+    writeArtifact(outDir, "reports/intake.json", JSON.stringify(intake, null, 2));
+  }
+  if (workspace) {
+    writeArtifact(outDir, "reports/workspace.json", JSON.stringify(workspace, null, 2));
+  }
   if (exportResult) {
     writeArtifact(outDir, "reports/repository-export.json", JSON.stringify(exportResult, null, 2));
   }
+  writeArtifact(
+    outDir,
+    "reports/executive-summary.md",
+    buildExecutiveSummary({
+      migrationId: graph.migrationId,
+      intake,
+      workspace,
+      decomposition,
+      validation,
+    })
+  );
 
   writeArtifact(outDir, "reports/blue-green-runbook.md", blueGreenRunbook(decomposition));
   writeSummary(
@@ -148,6 +180,8 @@ export function exportBundle(
     validation,
     audit,
     signoffCheckpoint,
+    intake,
+    workspace,
     exportResult
   );
 }

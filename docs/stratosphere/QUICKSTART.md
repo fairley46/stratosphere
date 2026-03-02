@@ -22,6 +22,16 @@ npm run stratosphere -- \
   --export-repo billing-migration
 ```
 
+## Generate with business intake + application workspace context
+
+```bash
+npm run stratosphere -- \
+  --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --intake-file fixtures/stratosphere/sample-intake.json \
+  --workspace-file fixtures/stratosphere/sample-workspace.json \
+  --out-dir artifacts/stratosphere
+```
+
 ## Generate from local VM discovery (no runtime file)
 
 ```bash
@@ -86,3 +96,8 @@ npm run test:coverage
 - `reports/validation.json`
 - `reports/blue-green-runbook.md`
 - `reports/migration-summary.json`
+- `reports/executive-summary.md`
+- `reports/intake.json` (when intake input is provided)
+- `reports/workspace.json` (when workspace input is provided)
+- `reports/runtime-profile-summary.json`
+- `reports/source-analysis.json`

@@ -6,6 +6,10 @@ import {
   runMigrationPipeline,
   summarizeRun,
   toErrorPayload,
+  validateApplicationWorkspace,
+  validateBusinessIntake,
+  type ApplicationWorkspace,
+  type BusinessIntake,
   type DiscoveryMode,
   type MigrationRunRequest,
   type RepositoryExportRequest,
@@ -88,26 +92,31 @@ function getOptionalNumber(args: ArgMap, key: string): number | undefined {
 }
 
 function loadSnapshot(runtimeFile: string): RuntimeSnapshot {
+  const parsed = loadJsonFile(runtimeFile, "runtime snapshot");
+  return parsed as RuntimeSnapshot;
+}
+
+function loadJsonFile(filePath: string, label: string): unknown {
   let raw: string;
   try {
-    raw = readFileSync(runtimeFile, "utf8");
+    raw = readFileSync(filePath, "utf8");
   } catch (error) {
     throw new StratosphereError({
       code: "FILE_READ_FAILED",
-      message: `Unable to read runtime snapshot file: ${runtimeFile}`,
+      message: `Unable to read ${label} file: ${filePath}`,
       hint: "Check that the file exists and is readable.",
-      details: { runtimeFile, reason: String(error) },
+      details: { filePath, reason: String(error) },
     });
   }
 
   try {
-    return JSON.parse(raw) as RuntimeSnapshot;
+    return JSON.parse(raw) as unknown;
   } catch (error) {
     throw new StratosphereError({
       code: "JSON_PARSE_FAILED",
-      message: `Invalid JSON in runtime snapshot file: ${runtimeFile}`,
+      message: `Invalid JSON in ${label} file: ${filePath}`,
       hint: "Validate JSON syntax and required fields.",
-      details: { runtimeFile, reason: String(error) },
+      details: { filePath, reason: String(error) },
     });
   }
 }
@@ -223,6 +232,14 @@ function buildRequest(args: ArgMap): MigrationRunRequest {
   const runtimeFileRaw = getOptionalString(args, "runtime-file");
   const runtimeFile = runtimeFileRaw ? resolve(INVOKE_CWD, runtimeFileRaw) : undefined;
   const runtimeSnapshot = runtimeFile ? loadSnapshot(runtimeFile) : undefined;
+  const intakeFileRaw = getOptionalString(args, "intake-file");
+  const intakeFile = intakeFileRaw ? resolve(INVOKE_CWD, intakeFileRaw) : undefined;
+  const intake = intakeFile ? validateBusinessIntake(loadJsonFile(intakeFile, "intake")) : undefined;
+  const workspaceFileRaw = getOptionalString(args, "workspace-file");
+  const workspaceFile = workspaceFileRaw ? resolve(INVOKE_CWD, workspaceFileRaw) : undefined;
+  const workspace = workspaceFile
+    ? validateApplicationWorkspace(loadJsonFile(workspaceFile, "workspace"))
+    : undefined;
 
   if (!runtimeSnapshot && discoveryMode === "snapshot") {
     throw new StratosphereError({
@@ -249,6 +266,8 @@ function buildRequest(args: ArgMap): MigrationRunRequest {
     initiatedBy: getOptionalString(args, "initiated-by"),
     signoffRequiredApprovers,
     exportRequest: parseExportRequest(args),
+    intake: intake as BusinessIntake | undefined,
+    workspace: workspace as ApplicationWorkspace | undefined,
   };
 }
 
@@ -263,6 +282,8 @@ Usage:
 Optional:
   --migration-id <id>
   --initiated-by <name>
+  --intake-file <path>
+  --workspace-file <path>
   --signoff-required-approvers <n>
   --local-discovery
   --ssh-host <host> --ssh-user <user> [--ssh-port <port>] [--ssh-key <path>]
@@ -300,6 +321,7 @@ async function main(): Promise<void> {
 
   console.log(`Migration package generated at ${request.outDir}`);
   console.log(summarizeRun(result));
+  console.log("reports/executive-summary.md generated for non-technical stakeholder review.");
 
   if (result.exportResult) {
     console.log(
