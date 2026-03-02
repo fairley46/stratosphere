@@ -1,0 +1,69 @@
+# Current-State Application Map
+
+## Summary
+
+```json
+{
+  "host": {
+    "hostname": "commerce-api-prod-03",
+    "os": "linux",
+    "distro": "Ubuntu 22.04.4 LTS",
+    "ip": "10.10.2.88"
+  },
+  "processCount": 6,
+  "scheduledJobCount": 2,
+  "externalDependencyCount": 3,
+  "graph": {
+    "nodeCount": 21,
+    "edgeCount": 27
+  }
+}
+```
+
+## Diagram
+
+```mermaid
+flowchart LR
+  host_commerce_api_prod_03["commerce-api-prod-03\nUbuntu 22.04.4 LTS"]
+  proc_node_4012["node\nports:3000\nmem:412Mi"]
+  host_commerce_api_prod_03 -->|runs| proc_node_4012
+  ext_redis_cluster_internal_6379(["redis-cluster.internal:6379"])
+  proc_node_4012 -->|tcp| ext_redis_cluster_internal_6379
+  ext_mongo_rs0_internal_27017(["mongo-rs0.internal:27017"])
+  proc_node_4012 -->|tcp| ext_mongo_rs0_internal_27017
+  ext_api_stripe_com_443(["api.stripe.com:443"])
+  proc_node_4012 -->|tcp| ext_api_stripe_com_443
+  fs_var_lib_uploads[["/var/lib/uploads"]]
+  proc_node_4012 -->|writes| fs_var_lib_uploads
+  fs_var_log_commerce_api_access_log[["/var/log/commerce-api/access.log"]]
+  proc_node_4012 -->|writes| fs_var_log_commerce_api_access_log
+  proc_node_4013["node\nports:3001\nmem:398Mi"]
+  host_commerce_api_prod_03 -->|runs| proc_node_4013
+  proc_node_4013 -->|tcp| ext_redis_cluster_internal_6379
+  proc_node_4013 -->|tcp| ext_mongo_rs0_internal_27017
+  proc_node_4013 -->|tcp| ext_api_stripe_com_443
+  proc_node_4014["node\nports:3002\nmem:401Mi"]
+  host_commerce_api_prod_03 -->|runs| proc_node_4014
+  proc_node_4014 -->|tcp| ext_redis_cluster_internal_6379
+  proc_node_4014 -->|tcp| ext_mongo_rs0_internal_27017
+  proc_node_4014 -->|tcp| ext_api_stripe_com_443
+  proc_node_4015["node\nports:3003\nmem:396Mi"]
+  host_commerce_api_prod_03 -->|runs| proc_node_4015
+  proc_node_4015 -->|tcp| ext_redis_cluster_internal_6379
+  proc_node_4015 -->|tcp| ext_mongo_rs0_internal_27017
+  proc_node_4015 -->|tcp| ext_api_stripe_com_443
+  proc_job_worker_4201["job-worker\nports:none\nmem:186Mi"]
+  host_commerce_api_prod_03 -->|runs| proc_job_worker_4201
+  proc_job_worker_4201 -->|tcp| ext_redis_cluster_internal_6379
+  proc_job_worker_4201 -->|tcp| ext_mongo_rs0_internal_27017
+  fs_var_log_commerce_api_jobs_log[["/var/log/commerce-api/jobs.log"]]
+  proc_job_worker_4201 -->|writes| fs_var_log_commerce_api_jobs_log
+  proc_pm2_4300["PM2\nports:none\nmem:74Mi"]
+  host_commerce_api_prod_03 -->|runs| proc_pm2_4300
+  fs_var_log_pm2_pm2_log[["/var/log/pm2/pm2.log"]]
+  proc_pm2_4300 -->|writes| fs_var_log_pm2_pm2_log
+  job_session_cleanup{"session-cleanup\n*/15 * * * *"}
+  proc_node_4012 -->|scheduled| job_session_cleanup
+  job_daily_analytics{"daily-analytics\n0 1 * * *"}
+  proc_node_4012 -->|scheduled| job_daily_analytics
+```

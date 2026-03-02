@@ -1,0 +1,9 @@
+{
+  "componentCount": 3,
+  "blockers": [],
+  "byKind": {
+    "Deployment": 1,
+    "StatefulSet": 1,
+    "CronJob": 1
+  }
+}

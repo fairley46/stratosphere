@@ -1,0 +1,33 @@
+{
+  "processCount": 3,
+  "totalCpuPercent": 56.3,
+  "totalMemoryMb": 2228,
+  "topCpuProcesses": [
+    {
+      "processName": "billing-app",
+      "cpuPercent": 52.4
+    },
+    {
+      "processName": "catalina",
+      "cpuPercent": 3.1
+    },
+    {
+      "processName": "liquibase",
+      "cpuPercent": 0.8
+    }
+  ],
+  "topMemoryProcesses": [
+    {
+      "processName": "billing-app",
+      "memoryMb": 1890
+    },
+    {
+      "processName": "catalina",
+      "memoryMb": 210
+    },
+    {
+      "processName": "liquibase",
+      "memoryMb": 128
+    }
+  ]
+}

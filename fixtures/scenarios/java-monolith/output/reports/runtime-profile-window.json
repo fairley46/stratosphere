@@ -1,0 +1,42 @@
+{
+  "sampleCount": 1,
+  "windowMinutes": 0,
+  "processProfiles": [
+    {
+      "processName": "billing-app",
+      "sampleCount": 1,
+      "avgCpuPercent": 52.4,
+      "peakCpuPercent": 52.4,
+      "p95CpuPercent": 52.4,
+      "avgMemoryMb": 1890,
+      "peakMemoryMb": 1890,
+      "p95MemoryMb": 1890,
+      "varianceScore": 0,
+      "confidence": 0.91
+    },
+    {
+      "processName": "catalina",
+      "sampleCount": 1,
+      "avgCpuPercent": 3.1,
+      "peakCpuPercent": 3.1,
+      "p95CpuPercent": 3.1,
+      "avgMemoryMb": 210,
+      "peakMemoryMb": 210,
+      "p95MemoryMb": 210,
+      "varianceScore": 0,
+      "confidence": 0.91
+    },
+    {
+      "processName": "liquibase",
+      "sampleCount": 1,
+      "avgCpuPercent": 0.8,
+      "peakCpuPercent": 0.8,
+      "p95CpuPercent": 0.8,
+      "avgMemoryMb": 128,
+      "peakMemoryMb": 128,
+      "p95MemoryMb": 128,
+      "varianceScore": 0,
+      "confidence": 0.91
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import { LocalDiscoveryAdapter, SshDiscoveryAdapter, SnapshotDiscoveryAdapter } 
 import { exportBundle } from "./export.js";
 import { runRepositoryExport } from "./repository-export.js";
 import { StratosphereError } from "./errors.js";
+import { detectVendorDependencies } from "./vendor.js";
 import type {
   AuditMetadata,
   DecompositionResult,
@@ -113,9 +114,25 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
 
   const graph = buildVmDnaGraph(request.migrationId, discovery);
   const decomposition = decomposeRuntime(discovery);
+
+  // Vendor detection: scan runtime patterns and merge with manual intake.vendorOwned flag.
+  const vendorDetection = detectVendorDependencies(discovery);
+  decomposition.vendorDetection = vendorDetection;
+
   if (request.intake?.vendorOwned) {
     decomposition.blockers.push(
       "Vendor-owned application detected. Advisory-only mode: validate recommendations with vendor before implementation."
+    );
+  }
+  for (const detected of vendorDetection.detected) {
+    decomposition.blockers.push(
+      `${detected.vendor} ${detected.service} dependency detected (confidence ${detected.confidence}). ` +
+        `Validate ${detected.vendor} migration approach with vendor documentation before implementation.`
+    );
+  }
+  if (vendorDetection.advisoryOnly) {
+    decomposition.blockers.push(
+      "Advisory-only mode active due to vendor dependencies. Generated Helm/Terraform artifacts are for planning review only."
     );
   }
   const applicationMaps = buildApplicationMaps(graph, discovery, decomposition);

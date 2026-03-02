@@ -1,0 +1,92 @@
+global:
+  imagePullPolicy: IfNotPresent
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop: ["ALL"]
+
+components:
+  - id: hrportal
+    name: HRPortal
+    stack: dotnet
+    kind: Deployment
+    replicas: 2
+    image: hrportal:latest
+    schedule: ""
+    ports: [80, 443]
+    resources:
+      requests:
+        cpu: 271m
+        memory: 930Mi
+      limits:
+        cpu: 542m
+        memory: 1860Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: ["AZURE_CLIENT_SECRET"]
+    secretKeys: ["AZURE_CLIENT_SECRET"]
+    persistence:
+      enabled: false
+      size: 20Gi
+
+  - id: reportworker
+    name: ReportWorker
+    stack: dotnet
+    kind: CronJob
+    replicas: 1
+    image: reportworker:latest
+    schedule: "0 6 1 * *"
+    ports: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 285Mi
+      limits:
+        cpu: 200m
+        memory: 570Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: []
+    secretKeys: []
+    persistence:
+      enabled: false
+      size: 20Gi
+
+  - id: sssd
+    name: sssd
+    stack: dotnet
+    kind: Deployment
+    replicas: 2
+    image: sssd:latest
+    schedule: ""
+    ports: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: []
+    secretKeys: []
+    persistence:
+      enabled: false
+      size: 20Gi
+

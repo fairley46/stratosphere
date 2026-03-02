@@ -1,0 +1,19 @@
+{
+  "assumptions": {
+    "vmBaseMonthlyUsd": 360,
+    "vmSustainmentMonthlyUsd": 150,
+    "vmSecurityOverheadMonthlyUsd": 120,
+    "k8sOpsMonthlyUsd": 120
+  },
+  "projections": {
+    "currentMonthlyUsd": 630,
+    "projectedMonthlyUsd": 390,
+    "monthlySavingsUsd": 240,
+    "oneTimeMigrationUsd": 12625,
+    "paybackMonths": 52.6
+  },
+  "notes": [
+    "ROI includes VM sustainment overhead and OS-level security maintenance exposure.",
+    "Assumptions are defaults and should be adjusted with real finance and operations data."
+  ]
+}

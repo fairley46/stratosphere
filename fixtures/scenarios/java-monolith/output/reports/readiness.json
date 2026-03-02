@@ -1,0 +1,16 @@
+{
+  "score": 88,
+  "confidence": 0.87,
+  "status": "READY",
+  "unknowns": [
+    "Business intake not provided.",
+    "Application workspace not provided."
+  ],
+  "breakdown": {
+    "blockerPenalty": 0,
+    "findingPenalty": 0,
+    "confidencePenalty": 2,
+    "unknownPenalty": 10
+  },
+  "mermaid": "flowchart LR\n  blockers[\"Blockers: 0\"]\n  findings[\"Findings: H0/M0/L0\"]\n  unknowns[\"Unknowns: 2\"]\n  confidence[\"Confidence: 0.93\"]\n  score[\"Readiness Score: 88\"]\n  blockers --> score\n  findings --> score\n  unknowns --> score\n  confidence --> score\n"
+}

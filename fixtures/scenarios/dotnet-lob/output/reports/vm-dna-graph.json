@@ -1,0 +1,271 @@
+{
+  "migrationId": "runtime",
+  "nodes": [
+    {
+      "id": "host:hr-lob-prod-02",
+      "type": "host",
+      "label": "hr-lob-prod-02",
+      "attributes": {
+        "os": "linux",
+        "distro": "Red Hat Enterprise Linux 8.9",
+        "ip": "10.30.7.44"
+      }
+    },
+    {
+      "id": "process:hrportal:3102",
+      "type": "process",
+      "label": "HRPortal",
+      "attributes": {
+        "pid": 3102,
+        "command": "dotnet HRPortal.dll --urls http://0.0.0.0:80;https://0.0.0.0:443",
+        "user": "hrapp",
+        "cpuPercent": 38.7,
+        "memoryMb": 1240
+      }
+    },
+    {
+      "id": "port:80",
+      "type": "port",
+      "label": ":80",
+      "attributes": {
+        "port": 80
+      }
+    },
+    {
+      "id": "port:443",
+      "type": "port",
+      "label": ":443",
+      "attributes": {
+        "port": 443
+      }
+    },
+    {
+      "id": "fs:opt-lob-attachments",
+      "type": "filesystem",
+      "label": "/opt/lob/attachments",
+      "attributes": {
+        "path": "/opt/lob/attachments"
+      }
+    },
+    {
+      "id": "fs:var-log-hrportal-app-log",
+      "type": "filesystem",
+      "label": "/var/log/hrportal/app.log",
+      "attributes": {
+        "path": "/var/log/hrportal/app.log"
+      }
+    },
+    {
+      "id": "process:reportworker:3290",
+      "type": "process",
+      "label": "ReportWorker",
+      "attributes": {
+        "pid": 3290,
+        "command": "dotnet ReportWorker.dll --endpoint servicebus.windows.net/contoso-hr",
+        "user": "hrapp",
+        "cpuPercent": 12.3,
+        "memoryMb": 380
+      }
+    },
+    {
+      "id": "fs:opt-lob-reports-scheduled",
+      "type": "filesystem",
+      "label": "/opt/lob/reports/scheduled",
+      "attributes": {
+        "path": "/opt/lob/reports/scheduled"
+      }
+    },
+    {
+      "id": "process:sssd:3445",
+      "type": "process",
+      "label": "sssd",
+      "attributes": {
+        "pid": 3445,
+        "command": "/usr/sbin/sssd --daemonize -i",
+        "user": "root",
+        "cpuPercent": 1.2,
+        "memoryMb": 58
+      }
+    },
+    {
+      "id": "fs:var-log-sssd-sssd-log",
+      "type": "filesystem",
+      "label": "/var/log/sssd/sssd.log",
+      "attributes": {
+        "path": "/var/log/sssd/sssd.log"
+      }
+    },
+    {
+      "id": "external:mssql-prod-internal:1433",
+      "type": "external-service",
+      "label": "mssql-prod.internal:1433",
+      "attributes": {
+        "host": "mssql-prod.internal",
+        "port": 1433
+      }
+    },
+    {
+      "id": "external:login-microsoftonline-com:443",
+      "type": "external-service",
+      "label": "login.microsoftonline.com:443",
+      "attributes": {
+        "host": "login.microsoftonline.com",
+        "port": 443
+      }
+    },
+    {
+      "id": "external:contoso-hr-servicebus-windows-net:443",
+      "type": "external-service",
+      "label": "contoso-hr.servicebus.windows.net:443",
+      "attributes": {
+        "host": "contoso-hr.servicebus.windows.net",
+        "port": 443
+      }
+    },
+    {
+      "id": "external:dc01-corp-contoso-com:389",
+      "type": "external-service",
+      "label": "dc01.corp.contoso.com:389",
+      "attributes": {
+        "host": "dc01.corp.contoso.com",
+        "port": 389
+      }
+    },
+    {
+      "id": "job:monthly-headcount-report",
+      "type": "scheduled-job",
+      "label": "monthly-headcount-report",
+      "attributes": {
+        "schedule": "0 6 1 * *",
+        "source": "cron"
+      }
+    },
+    {
+      "id": "source:git-github-com-contoso-hr-portal-git",
+      "type": "source-repo",
+      "label": "git@github.com:contoso/hr-portal.git",
+      "attributes": {
+        "detectedStacks": "dotnet",
+        "buildFiles": "HRPortal.csproj,ReportWorker.csproj"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "host:hr-lob-prod-02",
+      "to": "process:hrportal:3102",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "port:80",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "port:443",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "fs:opt-lob-attachments",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "fs:var-log-hrportal-app-log",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "host:hr-lob-prod-02",
+      "to": "process:reportworker:3290",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:reportworker:3290",
+      "to": "fs:opt-lob-reports-scheduled",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "host:hr-lob-prod-02",
+      "to": "process:sssd:3445",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:sssd:3445",
+      "to": "fs:var-log-sssd-sssd-log",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "external:mssql-prod-internal:1433",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "external:login-microsoftonline-com:443",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:reportworker:3290",
+      "to": "external:contoso-hr-servicebus-windows-net:443",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:sssd:3445",
+      "to": "external:dc01-corp-contoso-com:389",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:reportworker:3290",
+      "to": "job:monthly-headcount-report",
+      "type": "scheduled-as",
+      "attributes": {
+        "schedule": "0 6 1 * *"
+      }
+    },
+    {
+      "from": "process:hrportal:3102",
+      "to": "source:git-github-com-contoso-hr-portal-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:reportworker:3290",
+      "to": "source:git-github-com-contoso-hr-portal-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:sssd:3445",
+      "to": "source:git-github-com-contoso-hr-portal-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    }
+  ]
+}

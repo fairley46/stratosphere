@@ -1,0 +1,42 @@
+{
+  "sampleCount": 1,
+  "windowMinutes": 0,
+  "processProfiles": [
+    {
+      "processName": "HRPortal",
+      "sampleCount": 1,
+      "avgCpuPercent": 38.7,
+      "peakCpuPercent": 38.7,
+      "p95CpuPercent": 38.7,
+      "avgMemoryMb": 1240,
+      "peakMemoryMb": 1240,
+      "p95MemoryMb": 1240,
+      "varianceScore": 0,
+      "confidence": 0.91
+    },
+    {
+      "processName": "ReportWorker",
+      "sampleCount": 1,
+      "avgCpuPercent": 12.3,
+      "peakCpuPercent": 12.3,
+      "p95CpuPercent": 12.3,
+      "avgMemoryMb": 380,
+      "peakMemoryMb": 380,
+      "p95MemoryMb": 380,
+      "varianceScore": 0,
+      "confidence": 0.91
+    },
+    {
+      "processName": "sssd",
+      "sampleCount": 1,
+      "avgCpuPercent": 1.2,
+      "peakCpuPercent": 1.2,
+      "p95CpuPercent": 1.2,
+      "avgMemoryMb": 58,
+      "peakMemoryMb": 58,
+      "p95MemoryMb": 58,
+      "varianceScore": 0,
+      "confidence": 0.91
+    }
+  ]
+}

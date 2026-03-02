@@ -1,0 +1,146 @@
+{{- range .Values.components }}
+{{- if eq .kind "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .id }}
+  labels:
+    app: {{ .id }}
+spec:
+  replicas: {{ .replicas }}
+  selector:
+    matchLabels:
+      app: {{ .id }}
+  template:
+    metadata:
+      labels:
+        app: {{ .id }}
+    spec:
+      serviceAccountName: {{ $.Release.Name }}-sa
+      securityContext: {{- toYaml $.Values.global.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .id }}
+        image: {{ .image }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        securityContext: {{- toYaml $.Values.global.containerSecurityContext | nindent 10 }}
+        resources: {{- toYaml .resources | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: {{ .id }}-config
+        - secretRef:
+            name: {{ .id }}-secret
+        ports:
+        {{- range .ports }}
+        - containerPort: {{ . }}
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: {{ .probes.readinessPath }}
+            port: {{ default 8080 (index .ports 0) }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: {{ .probes.livenessPath }}
+            port: {{ default 8080 (index .ports 0) }}
+          initialDelaySeconds: 20
+          periodSeconds: 20
+        startupProbe:
+          httpGet:
+            path: {{ .probes.startupPath }}
+            port: {{ default 8080 (index .ports 0) }}
+          failureThreshold: 30
+          periodSeconds: 10
+---
+{{- end }}
+{{- if eq .kind "StatefulSet" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .id }}
+  labels:
+    app: {{ .id }}
+spec:
+  serviceName: {{ .id }}
+  replicas: {{ .replicas }}
+  selector:
+    matchLabels:
+      app: {{ .id }}
+  template:
+    metadata:
+      labels:
+        app: {{ .id }}
+    spec:
+      serviceAccountName: {{ $.Release.Name }}-sa
+      securityContext: {{- toYaml $.Values.global.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .id }}
+        image: {{ .image }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        securityContext: {{- toYaml $.Values.global.containerSecurityContext | nindent 10 }}
+        resources: {{- toYaml .resources | nindent 10 }}
+        envFrom:
+        - configMapRef:
+            name: {{ .id }}-config
+        - secretRef:
+            name: {{ .id }}-secret
+        ports:
+        {{- range .ports }}
+        - containerPort: {{ . }}
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: {{ .probes.readinessPath }}
+            port: {{ default 8080 (index .ports 0) }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: {{ .probes.livenessPath }}
+            port: {{ default 8080 (index .ports 0) }}
+          initialDelaySeconds: 20
+          periodSeconds: 20
+        volumeMounts:
+        - name: data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .persistence.size }}
+---
+{{- end }}
+{{- if eq .kind "CronJob" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .id }}
+spec:
+  schedule: {{ .schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ $.Release.Name }}-sa
+          restartPolicy: OnFailure
+          securityContext: {{- toYaml $.Values.global.podSecurityContext | nindent 10 }}
+          containers:
+          - name: {{ .id }}
+            image: {{ .image }}
+            imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+            securityContext: {{- toYaml $.Values.global.containerSecurityContext | nindent 12 }}
+            resources: {{- toYaml .resources | nindent 12 }}
+            envFrom:
+            - configMapRef:
+                name: {{ .id }}-config
+            - secretRef:
+                name: {{ .id }}-secret
+---
+{{- end }}
+{{- end }}

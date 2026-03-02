@@ -1,0 +1,181 @@
+{
+  "runtime": {
+    "host": {
+      "hostname": "commerce-api-prod-03",
+      "os": "linux",
+      "distro": "Ubuntu 22.04.4 LTS",
+      "ip": "10.10.2.88"
+    },
+    "processes": [
+      {
+        "pid": 4012,
+        "name": "node",
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 29.1,
+        "memoryMb": 412,
+        "listeningPorts": [
+          3000
+        ],
+        "fileWrites": [
+          "/var/lib/uploads",
+          "/var/log/commerce-api/access.log"
+        ],
+        "envHints": {
+          "NODE_ENV": "production",
+          "REDIS_PASSWORD": "***",
+          "MONGO_URI": "***",
+          "STRIPE_SECRET_KEY": "***",
+          "SESSION_SECRET": "***",
+          "PORT": "3000"
+        }
+      },
+      {
+        "pid": 4013,
+        "name": "node",
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 27.8,
+        "memoryMb": 398,
+        "listeningPorts": [
+          3001
+        ],
+        "fileWrites": [],
+        "envHints": {
+          "NODE_ENV": "production",
+          "REDIS_PASSWORD": "***",
+          "MONGO_URI": "***",
+          "PORT": "3001"
+        }
+      },
+      {
+        "pid": 4014,
+        "name": "node",
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 26.3,
+        "memoryMb": 401,
+        "listeningPorts": [
+          3002
+        ],
+        "fileWrites": [],
+        "envHints": {
+          "NODE_ENV": "production",
+          "REDIS_PASSWORD": "***",
+          "MONGO_URI": "***",
+          "PORT": "3002"
+        }
+      },
+      {
+        "pid": 4015,
+        "name": "node",
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 25.9,
+        "memoryMb": 396,
+        "listeningPorts": [
+          3003
+        ],
+        "fileWrites": [],
+        "envHints": {
+          "NODE_ENV": "production",
+          "REDIS_PASSWORD": "***",
+          "MONGO_URI": "***",
+          "PORT": "3003"
+        }
+      },
+      {
+        "pid": 4201,
+        "name": "job-worker",
+        "command": "node /app/dist/workers/job-worker.js",
+        "user": "nodeapp",
+        "cpuPercent": 8.4,
+        "memoryMb": 186,
+        "listeningPorts": [],
+        "fileWrites": [
+          "/var/log/commerce-api/jobs.log"
+        ],
+        "envHints": {
+          "REDIS_PASSWORD": "***",
+          "MONGO_URI": "***",
+          "STRIPE_SECRET_KEY": "***"
+        }
+      },
+      {
+        "pid": 4300,
+        "name": "PM2",
+        "command": "node /usr/lib/node_modules/pm2/bin/pm2 start ecosystem.config.js",
+        "user": "nodeapp",
+        "cpuPercent": 0.9,
+        "memoryMb": 74,
+        "listeningPorts": [],
+        "fileWrites": [
+          "/var/log/pm2/pm2.log"
+        ],
+        "envHints": {}
+      }
+    ],
+    "connections": [
+      {
+        "processName": "node",
+        "toHost": "redis-cluster.internal",
+        "toPort": 6379,
+        "protocol": "tcp"
+      },
+      {
+        "processName": "node",
+        "toHost": "mongo-rs0.internal",
+        "toPort": 27017,
+        "protocol": "tcp"
+      },
+      {
+        "processName": "node",
+        "toHost": "api.stripe.com",
+        "toPort": 443,
+        "protocol": "tcp"
+      },
+      {
+        "processName": "job-worker",
+        "toHost": "redis-cluster.internal",
+        "toPort": 6379,
+        "protocol": "tcp"
+      },
+      {
+        "processName": "job-worker",
+        "toHost": "mongo-rs0.internal",
+        "toPort": 27017,
+        "protocol": "tcp"
+      }
+    ],
+    "scheduledJobs": [
+      {
+        "name": "session-cleanup",
+        "schedule": "*/15 * * * *",
+        "command": "node /app/dist/scripts/clean-sessions.js",
+        "source": "cron"
+      },
+      {
+        "name": "daily-analytics",
+        "schedule": "0 1 * * *",
+        "command": "node /app/dist/scripts/export-analytics.js",
+        "source": "cron"
+      }
+    ],
+    "source": {
+      "repositoryPath": "git@github.com:acme/commerce-api.git",
+      "detectedStacks": [
+        "nodejs"
+      ],
+      "buildFiles": [
+        "package.json"
+      ]
+    }
+  },
+  "evidence": {
+    "collector": "snapshot",
+    "commands": [],
+    "warnings": [],
+    "collectedAt": "2026-03-02T19:44:32.180Z",
+    "commandResults": []
+  }
+}

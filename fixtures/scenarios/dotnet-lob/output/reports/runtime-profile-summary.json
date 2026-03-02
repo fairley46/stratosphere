@@ -1,0 +1,33 @@
+{
+  "processCount": 3,
+  "totalCpuPercent": 52.2,
+  "totalMemoryMb": 1678,
+  "topCpuProcesses": [
+    {
+      "processName": "HRPortal",
+      "cpuPercent": 38.7
+    },
+    {
+      "processName": "ReportWorker",
+      "cpuPercent": 12.3
+    },
+    {
+      "processName": "sssd",
+      "cpuPercent": 1.2
+    }
+  ],
+  "topMemoryProcesses": [
+    {
+      "processName": "HRPortal",
+      "memoryMb": 1240
+    },
+    {
+      "processName": "ReportWorker",
+      "memoryMb": 380
+    },
+    {
+      "processName": "sssd",
+      "memoryMb": 58
+    }
+  ]
+}

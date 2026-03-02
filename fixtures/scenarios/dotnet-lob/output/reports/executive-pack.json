@@ -1,0 +1,262 @@
+{
+  "migrationId": "runtime",
+  "strategy": "balanced",
+  "strategyReport": {
+    "options": [
+      {
+        "strategy": "minimal-change",
+        "title": "Minimal Change",
+        "expectation": "Fastest path with least refactor. Keeps architecture close to current behavior.",
+        "riskLevel": "low",
+        "speedLevel": "fast"
+      },
+      {
+        "strategy": "balanced",
+        "title": "Balanced",
+        "expectation": "Pragmatic modernization. Improves cloud-native patterns while controlling migration risk.",
+        "riskLevel": "medium",
+        "speedLevel": "medium"
+      },
+      {
+        "strategy": "aggressive-modernization",
+        "title": "Aggressive Modernization",
+        "expectation": "Largest architecture change and optimization potential. Highest effort and program risk.",
+        "riskLevel": "high",
+        "speedLevel": "slow"
+      }
+    ],
+    "recommended": "minimal-change",
+    "rationale": "Blockers/high-risk findings detected. Start with the lowest-risk migration path."
+  },
+  "readiness": {
+    "score": 8,
+    "confidence": 0.71,
+    "status": "NOT_READY",
+    "unknowns": [
+      "Business intake not provided.",
+      "Application workspace not provided."
+    ],
+    "breakdown": {
+      "blockerPenalty": 50,
+      "findingPenalty": 30,
+      "confidencePenalty": 2,
+      "unknownPenalty": 10
+    },
+    "mermaid": "flowchart LR\n  blockers[\"Blockers: 2\"]\n  findings[\"Findings: H2/M0/L0\"]\n  unknowns[\"Unknowns: 2\"]\n  confidence[\"Confidence: 0.93\"]\n  score[\"Readiness Score: 8\"]\n  blockers --> score\n  findings --> score\n  unknowns --> score\n  confidence --> score\n"
+  },
+  "roi": {
+    "assumptions": {
+      "vmBaseMonthlyUsd": 360,
+      "vmSustainmentMonthlyUsd": 150,
+      "vmSecurityOverheadMonthlyUsd": 120,
+      "k8sOpsMonthlyUsd": 120
+    },
+    "projections": {
+      "currentMonthlyUsd": 630,
+      "projectedMonthlyUsd": 390,
+      "monthlySavingsUsd": 240,
+      "oneTimeMigrationUsd": 12625,
+      "paybackMonths": 52.6
+    },
+    "notes": [
+      "ROI includes VM sustainment overhead and OS-level security maintenance exposure.",
+      "Assumptions are defaults and should be adjusted with real finance and operations data."
+    ]
+  },
+  "businessImpact": {
+    "assessments": [
+      {
+        "category": "customer-risk",
+        "severity": "medium",
+        "summary": "Customer impact is possible and should be controlled with staged rollout.",
+        "rationale": [
+          "criticality=medium",
+          "blockers=2",
+          "highFindings=true"
+        ]
+      },
+      {
+        "category": "outage-risk",
+        "severity": "medium",
+        "summary": "Outage risk is manageable with blue/green checkpoints.",
+        "rationale": [
+          "downtimeTolerance=limited",
+          "statefulWorkloads=0",
+          "blockers=2"
+        ]
+      },
+      {
+        "category": "security-risk",
+        "severity": "medium",
+        "summary": "Security posture is improving but requires validation of controls.",
+        "rationale": [
+          "complianceNeeds=0",
+          "highFindings=true"
+        ]
+      },
+      {
+        "category": "operating-effort",
+        "severity": "medium",
+        "summary": "Operational effort is moderate and should be planned per component wave.",
+        "rationale": [
+          "recommendations=3",
+          "unknowns=2",
+          "workspaceAssets=0"
+        ]
+      }
+    ],
+    "topRisks": [
+      {
+        "category": "customer-risk",
+        "severity": "medium",
+        "summary": "Customer impact is possible and should be controlled with staged rollout.",
+        "rationale": [
+          "criticality=medium",
+          "blockers=2",
+          "highFindings=true"
+        ]
+      },
+      {
+        "category": "outage-risk",
+        "severity": "medium",
+        "summary": "Outage risk is manageable with blue/green checkpoints.",
+        "rationale": [
+          "downtimeTolerance=limited",
+          "statefulWorkloads=0",
+          "blockers=2"
+        ]
+      },
+      {
+        "category": "security-risk",
+        "severity": "medium",
+        "summary": "Security posture is improving but requires validation of controls.",
+        "rationale": [
+          "complianceNeeds=0",
+          "highFindings=true"
+        ]
+      }
+    ],
+    "recommendedActions": [
+      "Resolve blockers and re-run readiness before scheduling cutover.",
+      "Assign owners for open unknowns and capture resolution evidence.",
+      "Use blue/green traffic shifts with rollback checkpoints at each gate."
+    ]
+  },
+  "cutoverPlan": {
+    "mode": "blue-green",
+    "readinessGate": {
+      "minScore": 70,
+      "currentScore": 8
+    },
+    "stages": [
+      {
+        "id": "prepare-green",
+        "title": "Prepare green environment",
+        "ownerRole": "platform-owner",
+        "estimatedMinutes": 30,
+        "successCriteria": [
+          "Namespace and secrets created",
+          "Baseline policies applied",
+          "Connectivity validated"
+        ],
+        "rollbackTrigger": "Policy mismatch or missing prerequisites"
+      },
+      {
+        "id": "deploy-green",
+        "title": "Deploy generated workloads",
+        "ownerRole": "application-owner",
+        "estimatedMinutes": 35,
+        "successCriteria": [
+          "All deployments/statefulsets are healthy",
+          "Scheduled jobs validated in dry-run mode",
+          "Logs and metrics routed externally"
+        ],
+        "rollbackTrigger": "Repeated startup failures or missing dependencies"
+      },
+      {
+        "id": "shift-5",
+        "title": "Shift 5% traffic to green",
+        "ownerRole": "platform-owner",
+        "estimatedMinutes": 15,
+        "trafficPercent": 5,
+        "successCriteria": [
+          "No elevated error rate",
+          "Latency within baseline thresholds"
+        ],
+        "rollbackTrigger": "Error budget breach or dependency failures"
+      },
+      {
+        "id": "shift-25",
+        "title": "Shift 25% traffic to green",
+        "ownerRole": "platform-owner",
+        "estimatedMinutes": 20,
+        "trafficPercent": 25,
+        "successCriteria": [
+          "SLOs hold for 15+ minutes",
+          "No data integrity alerts"
+        ],
+        "rollbackTrigger": "SLO breach, DB error spikes, or operator abort"
+      },
+      {
+        "id": "shift-50",
+        "title": "Shift 50% traffic to green",
+        "ownerRole": "platform-owner",
+        "estimatedMinutes": 25,
+        "trafficPercent": 50,
+        "successCriteria": [
+          "Error and latency stable",
+          "Queue backlog within normal range"
+        ],
+        "rollbackTrigger": "Sustained queue backlog growth or health probe failures"
+      },
+      {
+        "id": "shift-100",
+        "title": "Shift 100% traffic to green",
+        "ownerRole": "platform-owner",
+        "estimatedMinutes": 30,
+        "trafficPercent": 100,
+        "successCriteria": [
+          "Full traffic stable",
+          "Final human go/no-go confirmation"
+        ],
+        "rollbackTrigger": "Critical alert, severe performance regression, or policy breach"
+      },
+      {
+        "id": "stabilization-window",
+        "title": "Stabilization and rollback hold window",
+        "ownerRole": "operations",
+        "estimatedMinutes": 60,
+        "successCriteria": [
+          "No critical alerts for full hold window",
+          "Approvers confirm cutover completion"
+        ],
+        "rollbackTrigger": "SLO regression or unresolved high-priority incident"
+      }
+    ],
+    "rollbackSimulations": [
+      {
+        "name": "Health Check Failure",
+        "trigger": "Readiness probes fail for two consecutive windows",
+        "expectedAction": "Route traffic back to blue immediately and freeze green updates.",
+        "confidence": 0.93
+      },
+      {
+        "name": "SLO Breach",
+        "trigger": "Latency/error SLO breach at 25%+ traffic stage",
+        "expectedAction": "Rollback to previous stable stage and open incident workflow.",
+        "confidence": 0.9
+      },
+      {
+        "name": "Data Path Regression",
+        "trigger": "Stateful write/read validation fails",
+        "expectedAction": "Abort cutover, restore blue path, and preserve diagnostics.",
+        "confidence": 0.95
+      }
+    ],
+    "notes": [
+      "Workload mix: 3 total (0 stateful, 1 scheduled).",
+      "Downtime tolerance: unspecified.",
+      "Human sign-off is required before and after cutover execution."
+    ]
+  }
+}

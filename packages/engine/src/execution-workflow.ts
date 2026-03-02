@@ -97,6 +97,9 @@ export function initExecutionWorkflow(input: {
   bundleDir: string;
   targetEnvironment: string;
   requiredApprovers?: number;
+  kubeconfig?: string;
+  kubeContext?: string;
+  kubeNamespace?: string;
 }): ExecutionJob {
   ensureBundleDir(input.bundleDir);
   const requiredApprovers = Math.max(EXECUTION_APPROVER_FLOOR, input.requiredApprovers ?? EXECUTION_APPROVER_FLOOR);
@@ -115,6 +118,9 @@ export function initExecutionWorkflow(input: {
     exportExecution: defaultExportExecution(),
     revisionCount: 0,
     lastUpdatedAt: nowIso(),
+    ...(input.kubeconfig !== undefined && { kubeconfig: input.kubeconfig }),
+    ...(input.kubeContext !== undefined && { kubeContext: input.kubeContext }),
+    ...(input.kubeNamespace !== undefined && { kubeNamespace: input.kubeNamespace }),
   };
   saveExecutionJob(job);
   return job;
@@ -225,6 +231,38 @@ export function runExecutionPreflight(input: {
       ? "Export policy check passed."
       : "Export execution policy disabled. Set STRATOSPHERE_ENABLE_EXPORT_EXECUTION=true when policy is approved.",
   });
+
+  // Kubernetes cluster validation: skip with advisory warn when no kubeconfig is set.
+  if (!job.kubeconfig) {
+    checks.push({
+      id: "k8s-connectivity",
+      title: "Kubernetes cluster validation",
+      passed: true,
+      message: "Cluster validation skipped — no kubeconfig configured on execution job. Set kubeconfig when initializing the workflow to enable live cluster checks.",
+    });
+  } else {
+    const clusterChecksPath = join(job.bundleDir, "reports/cluster-preflight.json");
+    if (existsSync(clusterChecksPath)) {
+      try {
+        const cached = JSON.parse(readFileSync(clusterChecksPath, "utf8")) as PreflightCheck[];
+        checks.push(...cached);
+      } catch {
+        checks.push({
+          id: "k8s-cluster",
+          title: "Kubernetes cluster validation",
+          passed: false,
+          message: "Failed to read cached cluster preflight results from reports/cluster-preflight.json.",
+        });
+      }
+    } else {
+      checks.push({
+        id: "k8s-cluster",
+        title: "Kubernetes cluster validation",
+        passed: true,
+        message: "Kubeconfig is set. Run runClusterPreflightChecks() and write results to reports/cluster-preflight.json for live cluster validation.",
+      });
+    }
+  }
 
   job.preflightChecks = checks;
   const allPassed = checks.every((check) => check.passed);

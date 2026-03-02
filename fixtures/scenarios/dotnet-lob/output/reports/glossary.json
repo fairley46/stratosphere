@@ -1,0 +1,45 @@
+{
+  "audience": "non-technical-app-owner",
+  "entries": [
+    {
+      "term": "Current-State Map",
+      "plainMeaning": "A picture of how your application works today.",
+      "whyItMatters": "Shows what exists now before any change is proposed."
+    },
+    {
+      "term": "Future-State Map",
+      "plainMeaning": "A picture of how Stratosphere recommends running the app after modernization.",
+      "whyItMatters": "Helps compare today vs tomorrow in one view."
+    },
+    {
+      "term": "Readiness Score",
+      "plainMeaning": "A confidence score for how prepared the migration plan is.",
+      "whyItMatters": "Shows if key information is missing before cutover work begins."
+    },
+    {
+      "term": "Unknowns",
+      "plainMeaning": "Questions that still need human answers.",
+      "whyItMatters": "Unknowns increase risk and should be resolved before deployment."
+    },
+    {
+      "term": "Blue/Green Migration",
+      "plainMeaning": "Keeping the old app running while a new version is validated.",
+      "whyItMatters": "Reduces outage risk and supports safer rollback."
+    },
+    {
+      "term": "Rollback",
+      "plainMeaning": "Switching traffic back to the previous stable environment.",
+      "whyItMatters": "Protects the business if something goes wrong during cutover."
+    },
+    {
+      "term": "Stateful Workload",
+      "plainMeaning": "A component that keeps important stored data.",
+      "whyItMatters": "Needs extra migration care to avoid data loss or corruption."
+    },
+    {
+      "term": "Human Sign-Off",
+      "plainMeaning": "A required approval from accountable people before execution.",
+      "whyItMatters": "Prevents accidental or unreviewed production changes."
+    }
+  ]
+}

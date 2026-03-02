@@ -1,0 +1,92 @@
+global:
+  imagePullPolicy: IfNotPresent
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop: ["ALL"]
+
+components:
+  - id: job-worker
+    name: job-worker
+    stack: nodejs
+    kind: Deployment
+    replicas: 2
+    image: job-worker:latest
+    schedule: ""
+    ports: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 140Mi
+      limits:
+        cpu: 200m
+        memory: 279Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: ["REDIS_PASSWORD", "STRIPE_SECRET_KEY"]
+    secretKeys: ["REDIS_PASSWORD", "STRIPE_SECRET_KEY"]
+    persistence:
+      enabled: false
+      size: 20Gi
+
+  - id: node
+    name: node
+    stack: nodejs
+    kind: CronJob
+    replicas: 1
+    image: node:latest
+    schedule: "*/15 * * * *"
+    ports: [3000, 3001, 3002, 3003]
+    resources:
+      requests:
+        cpu: 204m
+        memory: 309Mi
+      limits:
+        cpu: 407m
+        memory: 618Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: ["REDIS_PASSWORD", "STRIPE_SECRET_KEY", "SESSION_SECRET"]
+    secretKeys: ["REDIS_PASSWORD", "STRIPE_SECRET_KEY", "SESSION_SECRET"]
+    persistence:
+      enabled: false
+      size: 20Gi
+
+  - id: pm2
+    name: PM2
+    stack: nodejs
+    kind: Deployment
+    replicas: 2
+    image: pm2:latest
+    schedule: ""
+    ports: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: []
+    secretKeys: []
+    persistence:
+      enabled: false
+      size: 20Gi
+

@@ -1,0 +1,391 @@
+{
+  "migrationId": "runtime",
+  "nodes": [
+    {
+      "id": "host:commerce-api-prod-03",
+      "type": "host",
+      "label": "commerce-api-prod-03",
+      "attributes": {
+        "os": "linux",
+        "distro": "Ubuntu 22.04.4 LTS",
+        "ip": "10.10.2.88"
+      }
+    },
+    {
+      "id": "process:node:4012",
+      "type": "process",
+      "label": "node",
+      "attributes": {
+        "pid": 4012,
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 29.1,
+        "memoryMb": 412
+      }
+    },
+    {
+      "id": "port:3000",
+      "type": "port",
+      "label": ":3000",
+      "attributes": {
+        "port": 3000
+      }
+    },
+    {
+      "id": "fs:var-lib-uploads",
+      "type": "filesystem",
+      "label": "/var/lib/uploads",
+      "attributes": {
+        "path": "/var/lib/uploads"
+      }
+    },
+    {
+      "id": "fs:var-log-commerce-api-access-log",
+      "type": "filesystem",
+      "label": "/var/log/commerce-api/access.log",
+      "attributes": {
+        "path": "/var/log/commerce-api/access.log"
+      }
+    },
+    {
+      "id": "process:node:4013",
+      "type": "process",
+      "label": "node",
+      "attributes": {
+        "pid": 4013,
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 27.8,
+        "memoryMb": 398
+      }
+    },
+    {
+      "id": "port:3001",
+      "type": "port",
+      "label": ":3001",
+      "attributes": {
+        "port": 3001
+      }
+    },
+    {
+      "id": "process:node:4014",
+      "type": "process",
+      "label": "node",
+      "attributes": {
+        "pid": 4014,
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 26.3,
+        "memoryMb": 401
+      }
+    },
+    {
+      "id": "port:3002",
+      "type": "port",
+      "label": ":3002",
+      "attributes": {
+        "port": 3002
+      }
+    },
+    {
+      "id": "process:node:4015",
+      "type": "process",
+      "label": "node",
+      "attributes": {
+        "pid": 4015,
+        "command": "node /app/dist/server.js",
+        "user": "nodeapp",
+        "cpuPercent": 25.9,
+        "memoryMb": 396
+      }
+    },
+    {
+      "id": "port:3003",
+      "type": "port",
+      "label": ":3003",
+      "attributes": {
+        "port": 3003
+      }
+    },
+    {
+      "id": "process:job-worker:4201",
+      "type": "process",
+      "label": "job-worker",
+      "attributes": {
+        "pid": 4201,
+        "command": "node /app/dist/workers/job-worker.js",
+        "user": "nodeapp",
+        "cpuPercent": 8.4,
+        "memoryMb": 186
+      }
+    },
+    {
+      "id": "fs:var-log-commerce-api-jobs-log",
+      "type": "filesystem",
+      "label": "/var/log/commerce-api/jobs.log",
+      "attributes": {
+        "path": "/var/log/commerce-api/jobs.log"
+      }
+    },
+    {
+      "id": "process:pm2:4300",
+      "type": "process",
+      "label": "PM2",
+      "attributes": {
+        "pid": 4300,
+        "command": "node /usr/lib/node_modules/pm2/bin/pm2 start ecosystem.config.js",
+        "user": "nodeapp",
+        "cpuPercent": 0.9,
+        "memoryMb": 74
+      }
+    },
+    {
+      "id": "fs:var-log-pm2-pm2-log",
+      "type": "filesystem",
+      "label": "/var/log/pm2/pm2.log",
+      "attributes": {
+        "path": "/var/log/pm2/pm2.log"
+      }
+    },
+    {
+      "id": "external:redis-cluster-internal:6379",
+      "type": "external-service",
+      "label": "redis-cluster.internal:6379",
+      "attributes": {
+        "host": "redis-cluster.internal",
+        "port": 6379
+      }
+    },
+    {
+      "id": "external:mongo-rs0-internal:27017",
+      "type": "external-service",
+      "label": "mongo-rs0.internal:27017",
+      "attributes": {
+        "host": "mongo-rs0.internal",
+        "port": 27017
+      }
+    },
+    {
+      "id": "external:api-stripe-com:443",
+      "type": "external-service",
+      "label": "api.stripe.com:443",
+      "attributes": {
+        "host": "api.stripe.com",
+        "port": 443
+      }
+    },
+    {
+      "id": "job:session-cleanup",
+      "type": "scheduled-job",
+      "label": "session-cleanup",
+      "attributes": {
+        "schedule": "*/15 * * * *",
+        "source": "cron"
+      }
+    },
+    {
+      "id": "job:daily-analytics",
+      "type": "scheduled-job",
+      "label": "daily-analytics",
+      "attributes": {
+        "schedule": "0 1 * * *",
+        "source": "cron"
+      }
+    },
+    {
+      "id": "source:git-github-com-acme-commerce-api-git",
+      "type": "source-repo",
+      "label": "git@github.com:acme/commerce-api.git",
+      "attributes": {
+        "detectedStacks": "nodejs",
+        "buildFiles": "package.json"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "host:commerce-api-prod-03",
+      "to": "process:node:4012",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4012",
+      "to": "port:3000",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:node:4012",
+      "to": "fs:var-lib-uploads",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4012",
+      "to": "fs:var-log-commerce-api-access-log",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "host:commerce-api-prod-03",
+      "to": "process:node:4013",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4013",
+      "to": "port:3001",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "host:commerce-api-prod-03",
+      "to": "process:node:4014",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4014",
+      "to": "port:3002",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "host:commerce-api-prod-03",
+      "to": "process:node:4015",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4015",
+      "to": "port:3003",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "host:commerce-api-prod-03",
+      "to": "process:job-worker:4201",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:job-worker:4201",
+      "to": "fs:var-log-commerce-api-jobs-log",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "host:commerce-api-prod-03",
+      "to": "process:pm2:4300",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:pm2:4300",
+      "to": "fs:var-log-pm2-pm2-log",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4012",
+      "to": "external:redis-cluster-internal:6379",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:node:4012",
+      "to": "external:mongo-rs0-internal:27017",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:node:4012",
+      "to": "external:api-stripe-com:443",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:job-worker:4201",
+      "to": "external:redis-cluster-internal:6379",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:job-worker:4201",
+      "to": "external:mongo-rs0-internal:27017",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:node:4012",
+      "to": "job:session-cleanup",
+      "type": "scheduled-as",
+      "attributes": {
+        "schedule": "*/15 * * * *"
+      }
+    },
+    {
+      "from": "process:node:4012",
+      "to": "job:daily-analytics",
+      "type": "scheduled-as",
+      "attributes": {
+        "schedule": "0 1 * * *"
+      }
+    },
+    {
+      "from": "process:node:4012",
+      "to": "source:git-github-com-acme-commerce-api-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4013",
+      "to": "source:git-github-com-acme-commerce-api-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4014",
+      "to": "source:git-github-com-acme-commerce-api-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:node:4015",
+      "to": "source:git-github-com-acme-commerce-api-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:job-worker:4201",
+      "to": "source:git-github-com-acme-commerce-api-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:pm2:4300",
+      "to": "source:git-github-com-acme-commerce-api-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    }
+  ]
+}

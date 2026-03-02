@@ -1,0 +1,80 @@
+{
+  "assessments": [
+    {
+      "category": "customer-risk",
+      "severity": "low",
+      "summary": "Customer disruption risk appears limited under staged cutover.",
+      "rationale": [
+        "criticality=medium",
+        "blockers=0",
+        "highFindings=false"
+      ]
+    },
+    {
+      "category": "outage-risk",
+      "severity": "medium",
+      "summary": "Outage risk is manageable with blue/green checkpoints.",
+      "rationale": [
+        "downtimeTolerance=limited",
+        "statefulWorkloads=1",
+        "blockers=0"
+      ]
+    },
+    {
+      "category": "security-risk",
+      "severity": "low",
+      "summary": "Security migration risk appears low with current findings.",
+      "rationale": [
+        "complianceNeeds=0",
+        "highFindings=false"
+      ]
+    },
+    {
+      "category": "operating-effort",
+      "severity": "medium",
+      "summary": "Operational effort is moderate and should be planned per component wave.",
+      "rationale": [
+        "recommendations=3",
+        "unknowns=2",
+        "workspaceAssets=0"
+      ]
+    }
+  ],
+  "topRisks": [
+    {
+      "category": "outage-risk",
+      "severity": "medium",
+      "summary": "Outage risk is manageable with blue/green checkpoints.",
+      "rationale": [
+        "downtimeTolerance=limited",
+        "statefulWorkloads=1",
+        "blockers=0"
+      ]
+    },
+    {
+      "category": "operating-effort",
+      "severity": "medium",
+      "summary": "Operational effort is moderate and should be planned per component wave.",
+      "rationale": [
+        "recommendations=3",
+        "unknowns=2",
+        "workspaceAssets=0"
+      ]
+    },
+    {
+      "category": "customer-risk",
+      "severity": "low",
+      "summary": "Customer disruption risk appears limited under staged cutover.",
+      "rationale": [
+        "criticality=medium",
+        "blockers=0",
+        "highFindings=false"
+      ]
+    }
+  ],
+  "recommendedActions": [
+    "Review high-confidence components first for phased rollout planning.",
+    "Assign owners for open unknowns and capture resolution evidence.",
+    "Use blue/green traffic shifts with rollback checkpoints at each gate."
+  ]
+}

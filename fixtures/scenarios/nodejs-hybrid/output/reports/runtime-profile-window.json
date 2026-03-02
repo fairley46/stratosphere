@@ -1,0 +1,42 @@
+{
+  "sampleCount": 1,
+  "windowMinutes": 0,
+  "processProfiles": [
+    {
+      "processName": "node",
+      "sampleCount": 4,
+      "avgCpuPercent": 27.27,
+      "peakCpuPercent": 29.1,
+      "p95CpuPercent": 27.8,
+      "avgMemoryMb": 401.75,
+      "peakMemoryMb": 412,
+      "p95MemoryMb": 401,
+      "varianceScore": 0.09,
+      "confidence": 0.92
+    },
+    {
+      "processName": "job-worker",
+      "sampleCount": 1,
+      "avgCpuPercent": 8.4,
+      "peakCpuPercent": 8.4,
+      "p95CpuPercent": 8.4,
+      "avgMemoryMb": 186,
+      "peakMemoryMb": 186,
+      "p95MemoryMb": 186,
+      "varianceScore": 0,
+      "confidence": 0.91
+    },
+    {
+      "processName": "PM2",
+      "sampleCount": 1,
+      "avgCpuPercent": 0.9,
+      "peakCpuPercent": 0.9,
+      "p95CpuPercent": 0.9,
+      "avgMemoryMb": 74,
+      "peakMemoryMb": 74,
+      "p95MemoryMb": 74,
+      "varianceScore": 0,
+      "confidence": 0.91
+    }
+  ]
+}

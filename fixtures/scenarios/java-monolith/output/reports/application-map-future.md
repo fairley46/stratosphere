@@ -1,0 +1,35 @@
+# Future-State Application Map
+
+## Summary
+
+```json
+{
+  "componentCount": 3,
+  "blockers": [],
+  "byKind": {
+    "Deployment": 1,
+    "StatefulSet": 1,
+    "CronJob": 1
+  }
+}
+```
+
+## Diagram
+
+```mermaid
+flowchart LR
+  k8s_cluster(["Kubernetes Target Cluster"])
+  wl_billing_app["billing-app\nStatefulSet\njava-spring"]
+  k8s_cluster --> wl_billing_app
+  dep_payments_stripe_com_443(["payments.stripe.com:443"])
+  wl_billing_app -->|depends on| dep_payments_stripe_com_443
+  dep_postgres_primary_internal_5432(["postgres-primary.internal:5432"])
+  wl_billing_app -->|depends on| dep_postgres_primary_internal_5432
+  dep_smtp_sendgrid_net_587(["smtp.sendgrid.net:587"])
+  wl_billing_app -->|depends on| dep_smtp_sendgrid_net_587
+  wl_catalina["catalina\nDeployment\njava-spring"]
+  k8s_cluster --> wl_catalina
+  wl_liquibase["liquibase\nCronJob\njava-spring"]
+  k8s_cluster --> wl_liquibase
+  wl_liquibase -->|depends on| dep_postgres_primary_internal_5432
+```

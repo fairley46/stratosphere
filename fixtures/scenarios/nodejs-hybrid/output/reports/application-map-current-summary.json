@@ -1,0 +1,15 @@
+{
+  "host": {
+    "hostname": "commerce-api-prod-03",
+    "os": "linux",
+    "distro": "Ubuntu 22.04.4 LTS",
+    "ip": "10.10.2.88"
+  },
+  "processCount": 6,
+  "scheduledJobCount": 2,
+  "externalDependencyCount": 3,
+  "graph": {
+    "nodeCount": 21,
+    "edgeCount": 27
+  }
+}

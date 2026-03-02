@@ -1,0 +1,100 @@
+{
+  "host": {
+    "hostname": "acme-billing-prod-01",
+    "os": "linux",
+    "distro": "Rocky Linux 9",
+    "ip": "10.20.4.11"
+  },
+  "processes": [
+    {
+      "pid": 2481,
+      "name": "billing-app",
+      "command": "java -Xmx2g -Xms512m -jar billing-app.jar --spring.profiles.active=prod",
+      "user": "billing",
+      "cpuPercent": 52.4,
+      "memoryMb": 1890,
+      "listeningPorts": [8080],
+      "fileWrites": [
+        "/var/lib/billing/uploads",
+        "/var/log/billing/app.log",
+        "/etc/billing/application.properties"
+      ],
+      "envHints": {
+        "SPRING_PROFILES_ACTIVE": "prod",
+        "DB_PASSWORD": "***",
+        "JWT_SECRET": "***",
+        "SMTP_API_KEY": "***",
+        "JAVA_OPTS": "-Xmx2g"
+      }
+    },
+    {
+      "pid": 2612,
+      "name": "catalina",
+      "command": "org.apache.catalina.startup.Bootstrap start",
+      "user": "billing",
+      "cpuPercent": 3.1,
+      "memoryMb": 210,
+      "listeningPorts": [8009],
+      "fileWrites": ["/var/log/tomcat/catalina.out"],
+      "envHints": {}
+    },
+    {
+      "pid": 2730,
+      "name": "liquibase",
+      "command": "java -cp liquibase.jar liquibase.integration.commandline.Main --changeLogFile=db/changelog.xml update",
+      "user": "billing",
+      "cpuPercent": 0.8,
+      "memoryMb": 128,
+      "listeningPorts": [],
+      "fileWrites": [],
+      "envHints": {
+        "DB_PASSWORD": "***"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "processName": "billing-app",
+      "toHost": "postgres-primary.internal",
+      "toPort": 5432,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "billing-app",
+      "toHost": "payments.stripe.com",
+      "toPort": 443,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "billing-app",
+      "toHost": "smtp.sendgrid.net",
+      "toPort": 587,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "liquibase",
+      "toHost": "postgres-primary.internal",
+      "toPort": 5432,
+      "protocol": "tcp"
+    }
+  ],
+  "scheduledJobs": [
+    {
+      "name": "liquibase-migrate",
+      "schedule": "@reboot",
+      "command": "java -cp liquibase.jar liquibase.integration.commandline.Main --changeLogFile=db/changelog.xml update",
+      "source": "systemd"
+    },
+    {
+      "name": "invoice-export",
+      "schedule": "0 3 * * *",
+      "command": "/usr/local/bin/export-invoices.sh",
+      "source": "cron"
+    }
+  ],
+  "source": {
+    "repositoryPath": "git@github.com:acme/billing-platform.git",
+    "detectedStacks": ["java-spring"],
+    "buildFiles": ["pom.xml"]
+  }
+}

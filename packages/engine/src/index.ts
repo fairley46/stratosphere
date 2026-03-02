@@ -1,5 +1,7 @@
 export * from "./types.js";
 export * from "./errors.js";
+export * from "./vendor.js";
+export * from "./preflight.js";
 export * from "./intake.js";
 export * from "./decision.js";
 export * from "./business-impact.js";

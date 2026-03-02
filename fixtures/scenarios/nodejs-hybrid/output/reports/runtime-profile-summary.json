@@ -1,0 +1,49 @@
+{
+  "processCount": 6,
+  "totalCpuPercent": 118.4,
+  "totalMemoryMb": 1867,
+  "topCpuProcesses": [
+    {
+      "processName": "node",
+      "cpuPercent": 29.1
+    },
+    {
+      "processName": "node",
+      "cpuPercent": 27.8
+    },
+    {
+      "processName": "node",
+      "cpuPercent": 26.3
+    },
+    {
+      "processName": "node",
+      "cpuPercent": 25.9
+    },
+    {
+      "processName": "job-worker",
+      "cpuPercent": 8.4
+    }
+  ],
+  "topMemoryProcesses": [
+    {
+      "processName": "node",
+      "memoryMb": 412
+    },
+    {
+      "processName": "node",
+      "memoryMb": 401
+    },
+    {
+      "processName": "node",
+      "memoryMb": 398
+    },
+    {
+      "processName": "node",
+      "memoryMb": 396
+    },
+    {
+      "processName": "job-worker",
+      "memoryMb": 186
+    }
+  ]
+}

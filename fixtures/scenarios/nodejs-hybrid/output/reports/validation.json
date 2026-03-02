@@ -1,0 +1,10 @@
+{
+  "findings": [
+    {
+      "severity": "high",
+      "message": "Blocker: node: both persistent writes and scheduled execution detected; verify workload split."
+    }
+  ],
+  "readyForHumanReview": false,
+  "requiresHumanSignoff": true
+}

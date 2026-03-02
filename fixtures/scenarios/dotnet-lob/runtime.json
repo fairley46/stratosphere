@@ -1,0 +1,94 @@
+{
+  "host": {
+    "hostname": "hr-lob-prod-02",
+    "os": "linux",
+    "distro": "Red Hat Enterprise Linux 8.9",
+    "ip": "10.30.7.44"
+  },
+  "processes": [
+    {
+      "pid": 3102,
+      "name": "HRPortal",
+      "command": "dotnet HRPortal.dll --urls http://0.0.0.0:80;https://0.0.0.0:443",
+      "user": "hrapp",
+      "cpuPercent": 38.7,
+      "memoryMb": 1240,
+      "listeningPorts": [80, 443],
+      "fileWrites": [
+        "/opt/lob/attachments",
+        "/var/log/hrportal/app.log"
+      ],
+      "envHints": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "MSSQL_CONNECTION_STRING": "***",
+        "AZURE_CLIENT_SECRET": "***",
+        "AZURE_CLIENT_ID": "f82a3c1e-9d4b-4e5f-a10c-7bc2d8e0f311",
+        "AZURE_TENANT_ID": "contoso.onmicrosoft.com"
+      }
+    },
+    {
+      "pid": 3290,
+      "name": "ReportWorker",
+      "command": "dotnet ReportWorker.dll --endpoint servicebus.windows.net/contoso-hr",
+      "user": "hrapp",
+      "cpuPercent": 12.3,
+      "memoryMb": 380,
+      "listeningPorts": [],
+      "fileWrites": ["/opt/lob/reports/scheduled"],
+      "envHints": {
+        "AZURE_SERVICEBUS_CONNECTION_STRING": "***",
+        "MSSQL_CONNECTION_STRING": "***"
+      }
+    },
+    {
+      "pid": 3445,
+      "name": "sssd",
+      "command": "/usr/sbin/sssd --daemonize -i",
+      "user": "root",
+      "cpuPercent": 1.2,
+      "memoryMb": 58,
+      "listeningPorts": [],
+      "fileWrites": ["/var/log/sssd/sssd.log"],
+      "envHints": {}
+    }
+  ],
+  "connections": [
+    {
+      "processName": "HRPortal",
+      "toHost": "mssql-prod.internal",
+      "toPort": 1433,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "HRPortal",
+      "toHost": "login.microsoftonline.com",
+      "toPort": 443,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "ReportWorker",
+      "toHost": "contoso-hr.servicebus.windows.net",
+      "toPort": 443,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "sssd",
+      "toHost": "dc01.corp.contoso.com",
+      "toPort": 389,
+      "protocol": "tcp"
+    }
+  ],
+  "scheduledJobs": [
+    {
+      "name": "monthly-headcount-report",
+      "schedule": "0 6 1 * *",
+      "command": "dotnet ReportWorker.dll --report headcount --output /opt/lob/reports/scheduled",
+      "source": "cron"
+    }
+  ],
+  "source": {
+    "repositoryPath": "git@github.com:contoso/hr-portal.git",
+    "detectedStacks": ["dotnet"],
+    "buildFiles": ["HRPortal.csproj", "ReportWorker.csproj"]
+  }
+}

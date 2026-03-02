@@ -1,6 +1,8 @@
 # Stratosphere v1 PRD
 
-Date: March 1, 2026  
+*Product requirements, scope boundaries, and success criteria for the Stratosphere v1 release.*
+
+Date: March 1, 2026
 Owner: Product + Platform Engineering
 
 ## 1) Product Summary

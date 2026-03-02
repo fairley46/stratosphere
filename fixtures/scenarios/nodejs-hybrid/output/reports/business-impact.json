@@ -1,0 +1,79 @@
+{
+  "assessments": [
+    {
+      "category": "customer-risk",
+      "severity": "medium",
+      "summary": "Customer impact is possible and should be controlled with staged rollout.",
+      "rationale": [
+        "criticality=medium",
+        "blockers=1",
+        "highFindings=true"
+      ]
+    },
+    {
+      "category": "outage-risk",
+      "severity": "medium",
+      "summary": "Outage risk is manageable with blue/green checkpoints.",
+      "rationale": [
+        "downtimeTolerance=limited",
+        "statefulWorkloads=0",
+        "blockers=1"
+      ]
+    },
+    {
+      "category": "security-risk",
+      "severity": "medium",
+      "summary": "Security posture is improving but requires validation of controls.",
+      "rationale": [
+        "complianceNeeds=0",
+        "highFindings=true"
+      ]
+    },
+    {
+      "category": "operating-effort",
+      "severity": "medium",
+      "summary": "Operational effort is moderate and should be planned per component wave.",
+      "rationale": [
+        "recommendations=3",
+        "unknowns=2",
+        "workspaceAssets=0"
+      ]
+    }
+  ],
+  "topRisks": [
+    {
+      "category": "customer-risk",
+      "severity": "medium",
+      "summary": "Customer impact is possible and should be controlled with staged rollout.",
+      "rationale": [
+        "criticality=medium",
+        "blockers=1",
+        "highFindings=true"
+      ]
+    },
+    {
+      "category": "outage-risk",
+      "severity": "medium",
+      "summary": "Outage risk is manageable with blue/green checkpoints.",
+      "rationale": [
+        "downtimeTolerance=limited",
+        "statefulWorkloads=0",
+        "blockers=1"
+      ]
+    },
+    {
+      "category": "security-risk",
+      "severity": "medium",
+      "summary": "Security posture is improving but requires validation of controls.",
+      "rationale": [
+        "complianceNeeds=0",
+        "highFindings=true"
+      ]
+    }
+  ],
+  "recommendedActions": [
+    "Resolve blockers and re-run readiness before scheduling cutover.",
+    "Assign owners for open unknowns and capture resolution evidence.",
+    "Use blue/green traffic shifts with rollback checkpoints at each gate."
+  ]
+}

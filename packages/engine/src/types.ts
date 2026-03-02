@@ -155,11 +155,13 @@ export type WorkloadRecommendation = {
   resourceRecommendation: ResourceRecommendation;
   dependencies: string[];
   schedule?: string;
+  secrets?: SecretReference[];
 };
 
 export type DecompositionResult = {
   recommendations: WorkloadRecommendation[];
   blockers: string[];
+  vendorDetection?: VendorDetectionResult;
 };
 
 export type GeneratedArtifact = {
@@ -365,6 +367,19 @@ export type PreflightCheck = {
   message: string;
 };
 
+export type VendorDetectionResult = {
+  detected: Array<{ vendor: string; service: string; confidence: number; evidence: string }>;
+  advisoryOnly: boolean;
+  notes: string[];
+};
+
+export type SecretReference = {
+  name: string;
+  envVarName: string;
+  source: "env-pattern" | "file-path" | "manual";
+  confidence: number;
+};
+
 export type ExecutionStep = {
   id: string;
   title: string;
@@ -397,4 +412,7 @@ export type ExecutionJob = {
   exportExecution: ExportExecutionStatus;
   revisionCount: number;
   lastUpdatedAt: string;
+  kubeconfig?: string;
+  kubeContext?: string;
+  kubeNamespace?: string;
 };

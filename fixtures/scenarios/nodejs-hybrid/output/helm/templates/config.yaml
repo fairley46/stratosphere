@@ -1,0 +1,26 @@
+{{- range .Values.components }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .id }}-config
+  labels:
+    app: {{ .id }}
+data:
+  APP_NAME: {{ .name | quote }}
+  APP_STACK: {{ .stack | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .id }}-secret
+  labels:
+    app: {{ .id }}
+type: Opaque
+stringData:
+  {{- if .secretKeys }}
+  {{- range .secretKeys }}
+  {{ . }}: "PLACEHOLDER"
+  {{- end }}
+  {{- end }}
+---
+{{- end }}

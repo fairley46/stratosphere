@@ -1,0 +1,27 @@
+{
+  "options": [
+    {
+      "strategy": "minimal-change",
+      "title": "Minimal Change",
+      "expectation": "Fastest path with least refactor. Keeps architecture close to current behavior.",
+      "riskLevel": "low",
+      "speedLevel": "fast"
+    },
+    {
+      "strategy": "balanced",
+      "title": "Balanced",
+      "expectation": "Pragmatic modernization. Improves cloud-native patterns while controlling migration risk.",
+      "riskLevel": "medium",
+      "speedLevel": "medium"
+    },
+    {
+      "strategy": "aggressive-modernization",
+      "title": "Aggressive Modernization",
+      "expectation": "Largest architecture change and optimization potential. Highest effort and program risk.",
+      "riskLevel": "high",
+      "speedLevel": "slow"
+    }
+  ],
+  "recommended": "aggressive-modernization",
+  "rationale": "Low blocker profile and simpler topology can support deeper modernization changes."
+}

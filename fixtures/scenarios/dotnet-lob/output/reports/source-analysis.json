@@ -1,0 +1,48 @@
+{
+  "repositoryPath": "git@github.com:contoso/hr-portal.git",
+  "detectedStacks": [
+    "dotnet"
+  ],
+  "componentMappings": [
+    {
+      "processName": "HRPortal",
+      "componentId": "hrportal",
+      "stack": "dotnet",
+      "command": "dotnet HRPortal.dll --urls http://0.0.0.0:80;https://0.0.0.0:443",
+      "buildFiles": [
+        "HRPortal.csproj",
+        "ReportWorker.csproj"
+      ],
+      "likelyBuildFile": "HRPortal.csproj",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "ReportWorker",
+      "componentId": "reportworker",
+      "stack": "dotnet",
+      "command": "dotnet ReportWorker.dll --endpoint servicebus.windows.net/contoso-hr",
+      "buildFiles": [
+        "HRPortal.csproj",
+        "ReportWorker.csproj"
+      ],
+      "likelyBuildFile": "HRPortal.csproj",
+      "mappingConfidence": 0.85,
+      "notes": []
+    },
+    {
+      "processName": "sssd",
+      "componentId": "sssd",
+      "stack": "dotnet",
+      "command": "/usr/sbin/sssd --daemonize -i",
+      "buildFiles": [
+        "HRPortal.csproj",
+        "ReportWorker.csproj"
+      ],
+      "likelyBuildFile": "HRPortal.csproj",
+      "mappingConfidence": 0.9,
+      "notes": []
+    }
+  ],
+  "warnings": []
+}

@@ -1,33 +1,45 @@
-# Stratosphere Docs Index
+# Stratosphere Docs
 
-Date: March 2, 2026
+> Interrogate the VM. Explain the system. Generate the migration plan.
 
-Use this folder as the canonical product documentation set. `README.md` in the repo root is the primary entry point.
+Use this as your navigation hub. Pick your audience below.
 
-## Start Here
-1. `PRODUCT_OVERVIEW.md`
-   - The complete product brief: what it is, who it serves, how it works, and what it outputs.
-2. `DEMO_RUNBOOK.md`
-   - The 12-15 minute demo talk track and artifact order.
-3. `ENGINEER_ONBOARDING.md`
-   - How to get productive quickly (CLI, MCP, tests, extension points).
+---
 
-## Governance and Execution
-1. `EXECUTION_WORKFLOW_SPEC.md`
-   - The review -> approval -> preflight -> execute lifecycle model.
-2. `ENTERPRISE_READINESS.md`
-   - Definition of “enterprise-ready” and rollout expectations.
-3. `SECURITY_REVIEW.md`
-   - Security hardening summary and residual risks.
+## I'm an engineer
 
-## Product Planning
-1. `BACKLOG.md`
-   - Unified backlog and roadmap status.
-2. `PRD.md`
-   - Product requirements and scope boundaries.
-3. `PILOT_EXECUTION_PLAN.md`
-   - How to validate Stratosphere against real workloads.
+| Doc | What it covers |
+|---|---|
+| [Quickstart](engineering/QUICKSTART.md) | Install, run your first migration, extend the engine |
+| [Engineer Onboarding](engineering/ENGINEER_ONBOARDING.md) | Repo layout, CLI flags, MCP tools, test patterns |
+| [Technical Architecture](engineering/TECHNICAL_ARCHITECTURE.md) | Package structure, engine pipeline, extension points |
 
-## Brand
-1. `BRAND.md`
-   - Positioning and messaging pillars.
+---
+
+## I'm a stakeholder or product owner
+
+| Doc | What it covers |
+|---|---|
+| [Product Overview](product/PRODUCT_OVERVIEW.md) | What Stratosphere is, who it serves, what it outputs |
+| [Pilot Execution Plan](product/PILOT_EXECUTION_PLAN.md) | How to validate against real enterprise workloads |
+| [PRD](product/PRD.md) | Product requirements and scope boundaries |
+| [Backlog](product/BACKLOG.md) | Roadmap, priorities, and open work |
+
+---
+
+## I'm evaluating for enterprise adoption
+
+| Doc | What it covers |
+|---|---|
+| [Execution Workflow Spec](governance/EXECUTION_WORKFLOW_SPEC.md) | Full review → approval → preflight → execute lifecycle |
+| [Enterprise Readiness](governance/ENTERPRISE_READINESS.md) | Definition of ready, rollout expectations |
+| [Security Review](governance/SECURITY_REVIEW.md) | Hardening decisions, residual risks, audit trail |
+
+---
+
+## I'm presenting or positioning
+
+| Doc | What it covers |
+|---|---|
+| [Demo Runbook](go-to-market/DEMO_RUNBOOK.md) | 12-minute demo talk track with artifact order |
+| [Brand Guide](go-to-market/BRAND.md) | Positioning pillars, messaging, and voice |

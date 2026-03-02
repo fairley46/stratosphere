@@ -1,5 +1,7 @@
 # Stratosphere Quickstart
 
+*For engineers getting Stratosphere running in under 10 minutes.*
+
 ## Generate a migration package from a runtime snapshot
 
 From the `stratosphere/` directory:

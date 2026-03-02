@@ -1,0 +1,81 @@
+{
+  "repositoryPath": "git@github.com:acme/commerce-api.git",
+  "detectedStacks": [
+    "nodejs"
+  ],
+  "componentMappings": [
+    {
+      "processName": "node",
+      "componentId": "node",
+      "stack": "nodejs",
+      "command": "node /app/dist/server.js",
+      "buildFiles": [
+        "package.json"
+      ],
+      "likelyBuildFile": "package.json",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "node",
+      "componentId": "node",
+      "stack": "nodejs",
+      "command": "node /app/dist/server.js",
+      "buildFiles": [
+        "package.json"
+      ],
+      "likelyBuildFile": "package.json",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "node",
+      "componentId": "node",
+      "stack": "nodejs",
+      "command": "node /app/dist/server.js",
+      "buildFiles": [
+        "package.json"
+      ],
+      "likelyBuildFile": "package.json",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "node",
+      "componentId": "node",
+      "stack": "nodejs",
+      "command": "node /app/dist/server.js",
+      "buildFiles": [
+        "package.json"
+      ],
+      "likelyBuildFile": "package.json",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "job-worker",
+      "componentId": "job-worker",
+      "stack": "nodejs",
+      "command": "node /app/dist/workers/job-worker.js",
+      "buildFiles": [
+        "package.json"
+      ],
+      "likelyBuildFile": "package.json",
+      "mappingConfidence": 0.85,
+      "notes": []
+    },
+    {
+      "processName": "PM2",
+      "componentId": "pm2",
+      "stack": "nodejs",
+      "command": "node /usr/lib/node_modules/pm2/bin/pm2 start ecosystem.config.js",
+      "buildFiles": [
+        "package.json"
+      ],
+      "likelyBuildFile": "package.json",
+      "mappingConfidence": 0.9,
+      "notes": []
+    }
+  ],
+  "warnings": []
+}

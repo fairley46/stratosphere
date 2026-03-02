@@ -1,0 +1,92 @@
+global:
+  imagePullPolicy: IfNotPresent
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop: ["ALL"]
+
+components:
+  - id: billing-app
+    name: billing-app
+    stack: java-spring
+    kind: StatefulSet
+    replicas: 1
+    image: billing-app:latest
+    schedule: ""
+    ports: [8080]
+    resources:
+      requests:
+        cpu: 367m
+        memory: 1418Mi
+      limits:
+        cpu: 734m
+        memory: 2835Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: ["DB_PASSWORD", "JWT_SECRET", "SMTP_API_KEY"]
+    secretKeys: ["DB_PASSWORD", "JWT_SECRET", "SMTP_API_KEY"]
+    persistence:
+      enabled: true
+      size: 20Gi
+
+  - id: catalina
+    name: catalina
+    stack: java-spring
+    kind: Deployment
+    replicas: 2
+    image: catalina:latest
+    schedule: ""
+    ports: [8009]
+    resources:
+      requests:
+        cpu: 100m
+        memory: 158Mi
+      limits:
+        cpu: 200m
+        memory: 315Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: []
+    secretKeys: []
+    persistence:
+      enabled: false
+      size: 20Gi
+
+  - id: liquibase
+    name: liquibase
+    stack: java-spring
+    kind: CronJob
+    replicas: 1
+    image: liquibase:latest
+    schedule: "@reboot"
+    ports: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    probes:
+      readinessPath: /health/ready
+      livenessPath: /health/live
+      startupPath: /health/startup
+    envConfig: []
+    envSecret: ["DB_PASSWORD"]
+    secretKeys: ["DB_PASSWORD"]
+    persistence:
+      enabled: false
+      size: 20Gi
+

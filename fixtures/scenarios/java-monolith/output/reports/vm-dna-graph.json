@@ -1,0 +1,271 @@
+{
+  "migrationId": "runtime",
+  "nodes": [
+    {
+      "id": "host:acme-billing-prod-01",
+      "type": "host",
+      "label": "acme-billing-prod-01",
+      "attributes": {
+        "os": "linux",
+        "distro": "Rocky Linux 9",
+        "ip": "10.20.4.11"
+      }
+    },
+    {
+      "id": "process:billing-app:2481",
+      "type": "process",
+      "label": "billing-app",
+      "attributes": {
+        "pid": 2481,
+        "command": "java -Xmx2g -Xms512m -jar billing-app.jar --spring.profiles.active=prod",
+        "user": "billing",
+        "cpuPercent": 52.4,
+        "memoryMb": 1890
+      }
+    },
+    {
+      "id": "port:8080",
+      "type": "port",
+      "label": ":8080",
+      "attributes": {
+        "port": 8080
+      }
+    },
+    {
+      "id": "fs:var-lib-billing-uploads",
+      "type": "filesystem",
+      "label": "/var/lib/billing/uploads",
+      "attributes": {
+        "path": "/var/lib/billing/uploads"
+      }
+    },
+    {
+      "id": "fs:var-log-billing-app-log",
+      "type": "filesystem",
+      "label": "/var/log/billing/app.log",
+      "attributes": {
+        "path": "/var/log/billing/app.log"
+      }
+    },
+    {
+      "id": "fs:etc-billing-application-properties",
+      "type": "filesystem",
+      "label": "/etc/billing/application.properties",
+      "attributes": {
+        "path": "/etc/billing/application.properties"
+      }
+    },
+    {
+      "id": "process:catalina:2612",
+      "type": "process",
+      "label": "catalina",
+      "attributes": {
+        "pid": 2612,
+        "command": "org.apache.catalina.startup.Bootstrap start",
+        "user": "billing",
+        "cpuPercent": 3.1,
+        "memoryMb": 210
+      }
+    },
+    {
+      "id": "port:8009",
+      "type": "port",
+      "label": ":8009",
+      "attributes": {
+        "port": 8009
+      }
+    },
+    {
+      "id": "fs:var-log-tomcat-catalina-out",
+      "type": "filesystem",
+      "label": "/var/log/tomcat/catalina.out",
+      "attributes": {
+        "path": "/var/log/tomcat/catalina.out"
+      }
+    },
+    {
+      "id": "process:liquibase:2730",
+      "type": "process",
+      "label": "liquibase",
+      "attributes": {
+        "pid": 2730,
+        "command": "java -cp liquibase.jar liquibase.integration.commandline.Main --changeLogFile=db/changelog.xml update",
+        "user": "billing",
+        "cpuPercent": 0.8,
+        "memoryMb": 128
+      }
+    },
+    {
+      "id": "external:postgres-primary-internal:5432",
+      "type": "external-service",
+      "label": "postgres-primary.internal:5432",
+      "attributes": {
+        "host": "postgres-primary.internal",
+        "port": 5432
+      }
+    },
+    {
+      "id": "external:payments-stripe-com:443",
+      "type": "external-service",
+      "label": "payments.stripe.com:443",
+      "attributes": {
+        "host": "payments.stripe.com",
+        "port": 443
+      }
+    },
+    {
+      "id": "external:smtp-sendgrid-net:587",
+      "type": "external-service",
+      "label": "smtp.sendgrid.net:587",
+      "attributes": {
+        "host": "smtp.sendgrid.net",
+        "port": 587
+      }
+    },
+    {
+      "id": "job:liquibase-migrate",
+      "type": "scheduled-job",
+      "label": "liquibase-migrate",
+      "attributes": {
+        "schedule": "@reboot",
+        "source": "systemd"
+      }
+    },
+    {
+      "id": "job:invoice-export",
+      "type": "scheduled-job",
+      "label": "invoice-export",
+      "attributes": {
+        "schedule": "0 3 * * *",
+        "source": "cron"
+      }
+    },
+    {
+      "id": "source:git-github-com-acme-billing-platform-git",
+      "type": "source-repo",
+      "label": "git@github.com:acme/billing-platform.git",
+      "attributes": {
+        "detectedStacks": "java-spring",
+        "buildFiles": "pom.xml"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "host:acme-billing-prod-01",
+      "to": "process:billing-app:2481",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "port:8080",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "fs:var-lib-billing-uploads",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "fs:var-log-billing-app-log",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "fs:etc-billing-application-properties",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "host:acme-billing-prod-01",
+      "to": "process:catalina:2612",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:catalina:2612",
+      "to": "port:8009",
+      "type": "listens-on",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:catalina:2612",
+      "to": "fs:var-log-tomcat-catalina-out",
+      "type": "writes-to",
+      "attributes": {}
+    },
+    {
+      "from": "host:acme-billing-prod-01",
+      "to": "process:liquibase:2730",
+      "type": "runs",
+      "attributes": {}
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "external:postgres-primary-internal:5432",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "external:payments-stripe-com:443",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "external:smtp-sendgrid-net:587",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:liquibase:2730",
+      "to": "external:postgres-primary-internal:5432",
+      "type": "calls",
+      "attributes": {
+        "protocol": "tcp"
+      }
+    },
+    {
+      "from": "process:liquibase:2730",
+      "to": "job:liquibase-migrate",
+      "type": "scheduled-as",
+      "attributes": {
+        "schedule": "@reboot"
+      }
+    },
+    {
+      "from": "process:billing-app:2481",
+      "to": "source:git-github-com-acme-billing-platform-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:catalina:2612",
+      "to": "source:git-github-com-acme-billing-platform-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    },
+    {
+      "from": "process:liquibase:2730",
+      "to": "source:git-github-com-acme-billing-platform-git",
+      "type": "maps-to-source",
+      "attributes": {}
+    }
+  ]
+}

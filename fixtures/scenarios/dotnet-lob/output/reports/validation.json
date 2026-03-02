@@ -1,0 +1,14 @@
+{
+  "findings": [
+    {
+      "severity": "high",
+      "message": "Blocker: Azure Service Bus dependency detected (confidence 0.75). Validate Azure migration approach with vendor documentation before implementation."
+    },
+    {
+      "severity": "high",
+      "message": "Blocker: Advisory-only mode active due to vendor dependencies. Generated Helm/Terraform artifacts are for planning review only."
+    }
+  ],
+  "readyForHumanReview": false,
+  "requiresHumanSignoff": true
+}

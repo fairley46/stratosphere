@@ -3,12 +3,56 @@ import type {
   DiscoveryResult,
   ResourceRecommendation,
   RuntimeProcess,
+  SecretReference,
   StackType,
   WorkloadKind,
   WorkloadRecommendation,
 } from "./types.js";
 
 const PERSISTENT_PATH_HINTS = ["/var/lib", "/data", "/mnt", "/srv", "/opt/data"];
+
+const SECRET_ENV_PATTERNS = ["PASSWORD", "TOKEN", "API_KEY", "SECRET", "CERT", "PRIVATE_KEY", "AUTH"];
+const SECRET_FILE_PATTERNS = ["/etc/passwd", "/run/secrets/", "/opt/creds", "/.credentials"];
+
+/**
+ * Scan a set of processes for environment variable names and file paths that suggest
+ * credentials or secrets, returning deduplicated SecretReference entries.
+ */
+export function detectSecrets(processes: RuntimeProcess[]): SecretReference[] {
+  const seen = new Set<string>();
+  const secrets: SecretReference[] = [];
+
+  for (const proc of processes) {
+    for (const envKey of Object.keys(proc.envHints ?? {})) {
+      const upper = envKey.toUpperCase();
+      if (SECRET_ENV_PATTERNS.some((p) => upper.includes(p)) && !seen.has(envKey)) {
+        seen.add(envKey);
+        secrets.push({ name: envKey, envVarName: envKey, source: "env-pattern", confidence: 0.9 });
+      }
+    }
+
+    const cmdMatches = proc.command.match(/\b([A-Z][A-Z0-9_]*(PASSWORD|TOKEN|API_KEY|SECRET|CERT|PRIVATE_KEY|AUTH)[A-Z0-9_]*)=/g);
+    if (cmdMatches) {
+      for (const match of cmdMatches) {
+        const varName = match.replace(/=$/, "");
+        if (!seen.has(varName)) {
+          seen.add(varName);
+          secrets.push({ name: varName, envVarName: varName, source: "env-pattern", confidence: 0.7 });
+        }
+      }
+    }
+
+    for (const filePath of proc.fileWrites) {
+      if (SECRET_FILE_PATTERNS.some((p) => filePath.toLowerCase().includes(p)) && !seen.has(filePath)) {
+        seen.add(filePath);
+        const fileName = filePath.split("/").pop() ?? "credential";
+        secrets.push({ name: fileName, envVarName: "CREDENTIAL_FILE", source: "file-path", confidence: 0.6 });
+      }
+    }
+  }
+
+  return secrets;
+}
 
 function toComponentId(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -166,6 +210,7 @@ export function decomposeRuntime(discovery: DiscoveryResult): DecompositionResul
       resourceRecommendation: aggregateResources(processes),
       dependencies,
       schedule: scheduled ? scheduledJobs[0]?.schedule : undefined,
+      secrets: detectSecrets(processes),
     });
   }
 

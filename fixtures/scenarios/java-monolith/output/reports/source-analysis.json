@@ -1,0 +1,45 @@
+{
+  "repositoryPath": "git@github.com:acme/billing-platform.git",
+  "detectedStacks": [
+    "java-spring"
+  ],
+  "componentMappings": [
+    {
+      "processName": "billing-app",
+      "componentId": "billing-app",
+      "stack": "java-spring",
+      "command": "java -Xmx2g -Xms512m -jar billing-app.jar --spring.profiles.active=prod",
+      "buildFiles": [
+        "pom.xml"
+      ],
+      "likelyBuildFile": "pom.xml",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "catalina",
+      "componentId": "catalina",
+      "stack": "java-spring",
+      "command": "org.apache.catalina.startup.Bootstrap start",
+      "buildFiles": [
+        "pom.xml"
+      ],
+      "likelyBuildFile": "pom.xml",
+      "mappingConfidence": 0.9,
+      "notes": []
+    },
+    {
+      "processName": "liquibase",
+      "componentId": "liquibase",
+      "stack": "java-spring",
+      "command": "java -cp liquibase.jar liquibase.integration.commandline.Main --changeLogFile=db/changelog.xml update",
+      "buildFiles": [
+        "pom.xml"
+      ],
+      "likelyBuildFile": "pom.xml",
+      "mappingConfidence": 0.9,
+      "notes": []
+    }
+  ],
+  "warnings": []
+}

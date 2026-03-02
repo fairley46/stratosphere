@@ -7,6 +7,9 @@
   "scripts": {
     "build": "tsc -b"
   },
+  "dependencies": {
+    "@kubernetes/client-node": "^0.22.3"
+  },
   "devDependencies": {
     "@types/node": "^22.13.10"
   }
