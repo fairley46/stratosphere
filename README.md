@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/stratosphere-logo.png" alt="Stratosphere" width="720" />
+</p>
+
 # Stratosphere
 
 **Interrogate the VM. Explain the system. Generate the migration plan.**
