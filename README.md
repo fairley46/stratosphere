@@ -34,6 +34,10 @@ Each run now also includes:
 - `reports/executive-summary.md` (plain-language migration summary for app owners)
 - `reports/runtime-profile-summary.json` (process-level sizing summary)
 - `reports/source-analysis.json` (runtime-to-source component mapping hints)
+- `reports/migration-options.{json,md}` (clear strategy expectations and recommendation)
+- `reports/readiness.{json,md}` (readiness score, confidence, and scoring graph)
+- `reports/roi-estimate.{json,md}` (default ROI model including VM sustainment/security overhead)
+- `reports/executive-pack.{json,md}` (combined decision-layer summary)
 
 ## New Flows (Phase 1-3 Kickoff)
 
@@ -44,6 +48,7 @@ Provide runtime + business intake + application workspace:
 ```bash
 npm run stratosphere -- \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --strategy balanced \
   --intake-file fixtures/stratosphere/sample-intake.json \
   --workspace-file fixtures/stratosphere/sample-workspace.json \
   --out-dir artifacts/stratosphere
@@ -52,6 +57,7 @@ npm run stratosphere -- \
 This flow adds:
 - `reports/executive-summary.md` for business/stakeholder review.
 - `reports/intake.json` and `reports/workspace.json` for context traceability.
+- `reports/migration-options.*`, `reports/readiness.*`, `reports/roi-estimate.*`, and `reports/executive-pack.*` for Phase 4 decision support.
 
 ### 2) Local VM discovery flow
 
@@ -81,6 +87,7 @@ npm run stratosphere -- --local-discovery --out-dir artifacts/stratosphere
 - `snapshot`: provide `--runtime-file` JSON
 - `local`: provide `--local-discovery` (runs read-only commands on the same VM)
 - `ssh`: provide `--ssh-host` + `--ssh-user` (optional `--ssh-port`, `--ssh-key`)
+- optional strategy: `--strategy minimal-change|balanced|aggressive-modernization` (default: `balanced`)
 - optional business context: `--intake-file fixtures/stratosphere/sample-intake.json`
 - optional application scope: `--workspace-file fixtures/stratosphere/sample-workspace.json`
 
@@ -109,6 +116,11 @@ npm run stratosphere -- \
 
 By default export runs in dry-run planning mode and writes `reports/repository-export.json`.
 
+Execution policy (current):
+- `export_execute` / `--export-execute` requests execution intent.
+- Current implementation remains planning-first and does not perform direct repository mutation yet.
+- Human approval remains required before enabling real execution in a future phase.
+
 ## MCP Support
 
 Start the MCP server:
@@ -127,6 +139,7 @@ Tools exposed:
 ### MCP flow with intake + workspace context
 
 When using `generate_migration_bundle` or `generate_local_vm_bundle`, include:
+- `strategy` (`minimal-change`, `balanced`, `aggressive-modernization`)
 - `intake_file`
 - `workspace_file`
 

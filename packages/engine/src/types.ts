@@ -1,5 +1,6 @@
 export type WorkloadKind = "Deployment" | "StatefulSet" | "CronJob";
 export type DiscoveryMode = "snapshot" | "ssh" | "local";
+export type MigrationStrategy = "minimal-change" | "balanced" | "aggressive-modernization";
 
 export type StackType = "java-spring" | "dotnet" | "nodejs" | "python" | "unknown";
 
@@ -280,6 +281,7 @@ export type MigrationRunRequest = {
   runtimeSnapshot?: RuntimeSnapshot;
   outDir: string;
   discoveryMode?: DiscoveryMode;
+  strategy?: MigrationStrategy;
   connection?: VmConnection;
   initiatedBy?: string;
   signoffRequiredApprovers?: number;
@@ -293,6 +295,7 @@ export type MigrationRunResult = {
   graph: VmDnaGraph;
   decomposition: DecompositionResult;
   applicationMaps: ApplicationMaps;
+  strategy: MigrationStrategy;
   bundle: ArtifactBundle;
   validation: ValidationResult;
   audit: AuditMetadata;

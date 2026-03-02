@@ -27,6 +27,7 @@ npm run stratosphere -- \
 ```bash
 npm run stratosphere -- \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --strategy balanced \
   --intake-file fixtures/stratosphere/sample-intake.json \
   --workspace-file fixtures/stratosphere/sample-workspace.json \
   --out-dir artifacts/stratosphere
@@ -101,3 +102,11 @@ npm run test:coverage
 - `reports/workspace.json` (when workspace input is provided)
 - `reports/runtime-profile-summary.json`
 - `reports/source-analysis.json`
+- `reports/migration-options.json`
+- `reports/migration-options.md`
+- `reports/readiness.json`
+- `reports/readiness.md`
+- `reports/roi-estimate.json`
+- `reports/roi-estimate.md`
+- `reports/executive-pack.json`
+- `reports/executive-pack.md`

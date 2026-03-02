@@ -140,6 +140,17 @@ To start Phase 4 implementation immediately, these decisions are required:
 6. Export execution policy:
    when `export_execute` is allowed, required approvals, and token/auth model for GitHub/GitLab.
 
+## Phase 4 Kickoff Status (March 2, 2026)
+
+Implemented:
+- Strategy options report with plain-language user expectations (`minimal-change`, `balanced`, `aggressive-modernization`).
+- Readiness assessment with score, confidence, unknowns list, and mermaid scoring graph.
+- ROI estimate with VM sustainment and OS-level security overhead assumptions included.
+- Dual report outputs for decision layer (`.md` + `.json`) via executive pack.
+
+Pending clarification for full execution policy:
+- Repository export execution remains planning-first until explicit approval/auth policy is finalized.
+
 ## Unified Roadmap by Section (Original Scope + Backlog)
 
 This section merges the original v1 scope gaps with backlog additions into one execution list.

@@ -11,6 +11,7 @@ import {
   type ApplicationWorkspace,
   type BusinessIntake,
   type DiscoveryMode,
+  type MigrationStrategy,
   type MigrationRunRequest,
   type RepositoryExportRequest,
   type RuntimeSnapshot,
@@ -225,6 +226,19 @@ function resolveDiscoveryMode(args: ArgMap, connection: VmConnection | undefined
   return "snapshot";
 }
 
+function parseStrategy(args: ArgMap): MigrationStrategy | undefined {
+  const strategy = getOptionalString(args, "strategy");
+  if (!strategy) return undefined;
+  if (strategy === "minimal-change" || strategy === "balanced" || strategy === "aggressive-modernization") {
+    return strategy;
+  }
+  throw new StratosphereError({
+    code: "INPUT_INVALID",
+    message: `Invalid --strategy value: ${strategy}`,
+    hint: "Use one of: minimal-change, balanced, aggressive-modernization.",
+  });
+}
+
 function buildRequest(args: ArgMap): MigrationRunRequest {
   const connection = parseConnection(args);
   const discoveryMode = resolveDiscoveryMode(args, connection);
@@ -262,6 +276,7 @@ function buildRequest(args: ArgMap): MigrationRunRequest {
     runtimeSnapshot,
     outDir: resolve(INVOKE_CWD, getString(args, "out-dir", "artifacts/stratosphere")),
     discoveryMode,
+    strategy: parseStrategy(args),
     connection,
     initiatedBy: getOptionalString(args, "initiated-by"),
     signoffRequiredApprovers,
@@ -281,6 +296,7 @@ Usage:
 
 Optional:
   --migration-id <id>
+  --strategy <minimal-change|balanced|aggressive-modernization>
   --initiated-by <name>
   --intake-file <path>
   --workspace-file <path>

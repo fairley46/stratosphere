@@ -181,12 +181,14 @@ test("buildApplicationMaps and exportBundle write expected map and signoff outpu
     graph,
     decomposition,
     applicationMaps: maps,
+    strategy: "balanced",
     bundle,
     validation,
     audit,
     signoffCheckpoint,
   });
   assert.ok(summaryLine.includes("collector=snapshot"));
+  assert.ok(summaryLine.includes("strategy=balanced"));
   assert.ok(summaryLine.includes("workloads=2"));
 
   rmSync(outDir, { recursive: true, force: true });

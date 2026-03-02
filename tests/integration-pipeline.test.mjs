@@ -22,6 +22,7 @@ test("runMigrationPipeline writes core reports and export plan", async () => {
     migrationId: "integration-test",
     runtimeSnapshot: fixture,
     outDir,
+    strategy: "balanced",
     initiatedBy: "test-runner",
     intake: intakeFixture,
     workspace: workspaceFixture,
@@ -48,6 +49,10 @@ test("runMigrationPipeline writes core reports and export plan", async () => {
   const currentMap = readFileSync(join(outDir, "reports/application-map-current.md"), "utf8");
   const futureMap = readFileSync(join(outDir, "reports/application-map-future.md"), "utf8");
   const executiveSummary = readFileSync(join(outDir, "reports/executive-summary.md"), "utf8");
+  const executivePack = JSON.parse(readFileSync(join(outDir, "reports/executive-pack.json"), "utf8"));
+  const readiness = JSON.parse(readFileSync(join(outDir, "reports/readiness.json"), "utf8"));
+  const roiEstimate = JSON.parse(readFileSync(join(outDir, "reports/roi-estimate.json"), "utf8"));
+  const strategyOptions = JSON.parse(readFileSync(join(outDir, "reports/migration-options.json"), "utf8"));
   const runtimeProfileSummary = JSON.parse(readFileSync(join(outDir, "reports/runtime-profile-summary.json"), "utf8"));
   const sourceAnalysis = JSON.parse(readFileSync(join(outDir, "reports/source-analysis.json"), "utf8"));
   const workspaceReport = JSON.parse(readFileSync(join(outDir, "reports/workspace.json"), "utf8"));
@@ -55,6 +60,10 @@ test("runMigrationPipeline writes core reports and export plan", async () => {
   assert.ok(futureMap.includes("Future-State Application Map"));
   assert.ok(executiveSummary.includes("Executive Summary"));
   assert.ok(executiveSummary.includes("Billing Platform"));
+  assert.equal(executivePack.strategy, "balanced");
+  assert.ok(readiness.score >= 0);
+  assert.ok(roiEstimate.projections.currentMonthlyUsd >= roiEstimate.projections.projectedMonthlyUsd);
+  assert.ok(Array.isArray(strategyOptions.options));
   assert.ok(runtimeProfileSummary.processCount > 0);
   assert.ok(Array.isArray(sourceAnalysis.componentMappings));
   assert.equal(workspaceReport.workspaceName, "billing-app");

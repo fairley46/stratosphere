@@ -84,6 +84,7 @@ export function previewDecomposition(migrationId: string, runtimeSnapshot: Runti
 
 export async function runMigrationPipeline(request: MigrationRunRequest): Promise<MigrationRunResult> {
   const startedAt = new Date().toISOString();
+  const strategy = request.strategy ?? "balanced";
   const mode: DiscoveryMode = request.discoveryMode ?? (request.connection ? "ssh" : "snapshot");
   if (mode === "snapshot" && !request.runtimeSnapshot) {
     throw new StratosphereError({
@@ -130,6 +131,7 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     graph,
     decomposition,
     applicationMaps,
+    strategy,
     bundle,
     validation,
     audit,
@@ -149,6 +151,7 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     validation,
     audit,
     signoffCheckpoint,
+    strategy,
     request.intake,
     request.workspace,
     exportResult

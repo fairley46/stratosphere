@@ -1,5 +1,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import {
+  buildReadinessAssessment,
+  buildRoiEstimate,
+  buildStrategyOptionsReport,
+  renderReadinessMarkdown,
+  renderRoiMarkdown,
+  renderStrategyOptionsMarkdown,
+} from "./decision.js";
 import { buildExecutiveSummary } from "./intake.js";
 import { buildRuntimeProfileSummary } from "./profile.js";
 import { buildSourceAnalysis } from "./source-analysis.js";
@@ -12,6 +20,7 @@ import type {
   DecompositionResult,
   DiscoveryResult,
   HumanSignoffCheckpoint,
+  MigrationStrategy,
   MigrationRunResult,
   RepositoryExportResult,
   ValidationResult,
@@ -85,10 +94,19 @@ function writeSummary(
   validation: ValidationResult,
   audit: AuditMetadata,
   signoffCheckpoint: HumanSignoffCheckpoint,
+  strategy: MigrationStrategy = "balanced",
   intake?: BusinessIntake,
   workspace?: ApplicationWorkspace,
   exportResult?: RepositoryExportResult
 ): void {
+  const strategyReport = buildStrategyOptionsReport(decomposition, validation);
+  const readiness = buildReadinessAssessment({ decomposition, validation, intake, workspace });
+  const roi = buildRoiEstimate({
+    strategy,
+    processCount: discovery.runtime.processes.length,
+    intake,
+  });
+
   const summary = {
     runId: audit.runId,
     collectedAt: discovery.evidence.collectedAt,
@@ -108,6 +126,10 @@ function writeSummary(
       nodes: graph.nodes.length,
       edges: graph.edges.length,
     },
+    strategy,
+    strategyReport,
+    readiness,
+    roi,
     runtimeProfile: buildRuntimeProfileSummary(discovery),
     sourceAnalysis: buildSourceAnalysis(discovery, decomposition),
     audit,
@@ -126,11 +148,19 @@ export function exportBundle(
   validation: ValidationResult,
   audit: AuditMetadata,
   signoffCheckpoint: HumanSignoffCheckpoint,
+  strategy: MigrationStrategy = "balanced",
   intake?: BusinessIntake,
   workspace?: ApplicationWorkspace,
   exportResult?: RepositoryExportResult
 ): void {
   mkdirSync(outDir, { recursive: true });
+  const strategyReport = buildStrategyOptionsReport(decomposition, validation);
+  const readiness = buildReadinessAssessment({ decomposition, validation, intake, workspace });
+  const roi = buildRoiEstimate({
+    strategy,
+    processCount: discovery.runtime.processes.length,
+    intake,
+  });
 
   for (const artifact of bundle.artifacts) {
     writeArtifact(outDir, artifact.path, artifact.content);
@@ -139,6 +169,12 @@ export function exportBundle(
   writeArtifact(outDir, "reports/vm-dna-graph.json", JSON.stringify(graph, null, 2));
   writeArtifact(outDir, "reports/runtime-profile-summary.json", JSON.stringify(buildRuntimeProfileSummary(discovery), null, 2));
   writeArtifact(outDir, "reports/source-analysis.json", JSON.stringify(buildSourceAnalysis(discovery, decomposition), null, 2));
+  writeArtifact(outDir, "reports/migration-options.json", JSON.stringify(strategyReport, null, 2));
+  writeArtifact(outDir, "reports/migration-options.md", renderStrategyOptionsMarkdown(strategyReport));
+  writeArtifact(outDir, "reports/readiness.json", JSON.stringify(readiness, null, 2));
+  writeArtifact(outDir, "reports/readiness.md", renderReadinessMarkdown(readiness));
+  writeArtifact(outDir, "reports/roi-estimate.json", JSON.stringify(roi, null, 2));
+  writeArtifact(outDir, "reports/roi-estimate.md", renderRoiMarkdown(roi));
   writeArtifact(outDir, "reports/application-map-current.md", applicationMaps.currentState.markdown);
   writeArtifact(outDir, "reports/application-map-current.mmd", applicationMaps.currentState.mermaid);
   writeArtifact(outDir, "reports/application-map-current-summary.json", JSON.stringify(applicationMaps.currentState.summary, null, 2));
@@ -169,6 +205,50 @@ export function exportBundle(
       validation,
     })
   );
+  writeArtifact(
+    outDir,
+    "reports/executive-pack.json",
+    JSON.stringify(
+      {
+        migrationId: graph.migrationId,
+        strategy,
+        strategyReport,
+        readiness,
+        roi,
+        intake,
+        workspace,
+      },
+      null,
+      2
+    )
+  );
+  writeArtifact(
+    outDir,
+    "reports/executive-pack.md",
+    [
+      "# Executive Pack",
+      "",
+      `Migration ID: ${graph.migrationId}`,
+      `Selected strategy: ${strategy}`,
+      "",
+      "## Readiness",
+      `- Score: ${readiness.score}`,
+      `- Confidence: ${readiness.confidence}`,
+      `- Status: ${readiness.status}`,
+      "",
+      "## Recommended Strategy",
+      `- ${strategyReport.recommended}`,
+      `- ${strategyReport.rationale}`,
+      "",
+      "## ROI Snapshot",
+      `- Current monthly: $${roi.projections.currentMonthlyUsd}`,
+      `- Projected monthly: $${roi.projections.projectedMonthlyUsd}`,
+      `- Monthly savings: $${roi.projections.monthlySavingsUsd}`,
+      `- One-time migration: $${roi.projections.oneTimeMigrationUsd}`,
+      `- Payback (months): ${roi.projections.paybackMonths ?? "n/a"}`,
+      "",
+    ].join("\n")
+  );
 
   writeArtifact(outDir, "reports/blue-green-runbook.md", blueGreenRunbook(decomposition));
   writeSummary(
@@ -180,6 +260,7 @@ export function exportBundle(
     validation,
     audit,
     signoffCheckpoint,
+    strategy,
     intake,
     workspace,
     exportResult
@@ -190,6 +271,7 @@ export function summarizeRun(result: MigrationRunResult): string {
   return [
     `runId=${result.audit.runId}`,
     `collector=${result.discovery.evidence.collector}`,
+    `strategy=${result.strategy}`,
     `workloads=${result.decomposition.recommendations.length}`,
     `blockers=${result.decomposition.blockers.length}`,
     `findings=${result.validation.findings.length}`,

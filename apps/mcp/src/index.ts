@@ -164,6 +164,7 @@ server.tool(
     runtime_file: z.string().optional().describe("Optional path to runtime snapshot JSON"),
     intake_file: z.string().optional().describe("Optional path to business intake JSON"),
     workspace_file: z.string().optional().describe("Optional path to application workspace JSON"),
+    strategy: z.enum(["minimal-change", "balanced", "aggressive-modernization"]).optional().describe("Migration strategy profile"),
     local_discovery: z.boolean().optional().describe("Run read-only discovery directly on the host running this MCP server"),
     out_dir: z.string().default("artifacts/stratosphere").describe("Output directory for generated bundle"),
     migration_id: z.string().optional().describe("Optional migration id override"),
@@ -184,6 +185,7 @@ server.tool(
       runtime_file,
       intake_file,
       workspace_file,
+      strategy,
       local_discovery,
       out_dir,
       migration_id,
@@ -234,6 +236,7 @@ server.tool(
         runtimeSnapshot,
         outDir: outputDir,
         discoveryMode,
+        strategy,
         initiatedBy: initiated_by,
         signoffRequiredApprovers,
         connection: local_discovery ? undefined : connection,
@@ -259,6 +262,7 @@ server.tool(
                 migrationId: request.migrationId,
                 outDir: outputDir,
                 summary: summarizeRun(result),
+                strategy: result.strategy,
                 recommendations: result.decomposition.recommendations.map((item) => ({
                   component: item.componentName,
                   kind: item.kind,
@@ -289,6 +293,7 @@ server.tool(
         runtime_file,
         intake_file,
         workspace_file,
+        strategy,
         local_discovery,
         out_dir,
       });
@@ -319,10 +324,11 @@ server.tool(
     runtime_file: z.string().optional().describe("Optional runtime snapshot fallback file"),
     intake_file: z.string().optional().describe("Optional path to business intake JSON"),
     workspace_file: z.string().optional().describe("Optional path to application workspace JSON"),
+    strategy: z.enum(["minimal-change", "balanced", "aggressive-modernization"]).optional().describe("Migration strategy profile"),
     initiated_by: z.string().optional().describe("Operator name for audit trail"),
     signoff_required_approvers: z.number().optional().describe("Required number of approvers for sign-off"),
   },
-  async ({ out_dir, migration_id, runtime_file, intake_file, workspace_file, initiated_by, signoff_required_approvers }) => {
+  async ({ out_dir, migration_id, runtime_file, intake_file, workspace_file, strategy, initiated_by, signoff_required_approvers }) => {
     try {
       const outputDir = resolve(out_dir);
       const runtimeSnapshot = runtime_file ? loadRuntimeSnapshot(resolve(runtime_file)) : undefined;
@@ -335,6 +341,7 @@ server.tool(
         runtimeSnapshot,
         outDir: outputDir,
         discoveryMode: "local",
+        strategy,
         initiatedBy: initiated_by,
         signoffRequiredApprovers,
         intake,
@@ -351,6 +358,7 @@ server.tool(
                 migrationId: request.migrationId,
                 outDir: outputDir,
                 summary: summarizeRun(result),
+                strategy: result.strategy,
                 applicationMaps: {
                   currentStateSummary: result.applicationMaps.currentState.summary,
                   futureStateSummary: result.applicationMaps.futureState.summary,
@@ -372,6 +380,7 @@ server.tool(
         runtime_file,
         intake_file,
         workspace_file,
+        strategy,
       });
     }
   }
