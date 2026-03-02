@@ -12,8 +12,12 @@
     "test": "npm run build && node --test tests/**/*.test.mjs",
     "test:coverage": "npm run build && node --experimental-test-coverage --test-coverage-include='packages/engine/dist/**/*.js' --test-coverage-exclude='packages/engine/dist/repository-export.js' --test-coverage-lines=99 --test tests/**/*.test.mjs",
     "ci": "npm run test:coverage",
-    "stratosphere": "npm --workspace @stratosphere/cli run run --",
-    "mcp:start": "npm --workspace @stratosphere/mcp run start",
+    "stratosphere": "npm --workspace @stratosphere/bin run run --",
+    "mcp:start": "npm --workspace @stratosphere/bin run mcp",
+    "doctor": "npm --workspace @stratosphere/bin run doctor --",
+    "binary:build": "npm --workspace @stratosphere/bin run build:binary",
+    "binary:linux-x64": "npm --workspace @stratosphere/bin run build:binary:linux-x64",
+    "binary:linux-arm64": "npm --workspace @stratosphere/bin run build:binary:linux-arm64",
     "demo": "bash scripts/demo.sh"
   },
   "devDependencies": {

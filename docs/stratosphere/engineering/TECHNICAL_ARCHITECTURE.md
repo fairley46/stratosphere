@@ -2,6 +2,7 @@
 
 This repo ships Stratosphere as:
 
+- A single executable wrapper (`apps/bin`) exposing `stratosphere`, `stratosphere mcp`, and `stratosphere doctor`
 - A standalone CLI (`apps/cli`)
 - A local MCP server over stdio (`apps/mcp`) for agent workflows (Claude Desktop, Opencode, etc.)
 - An in-process engine library (`packages/engine`) used by both
@@ -22,6 +23,10 @@ There is no Web UI or HTTP API in this version.
 ## High-Level Flow
 
 ```text
+[stratosphere binary]
+  |       \
+  |        \-- [doctor]
+  v
 [CLI]                       [MCP Server (stdio)]
   |                                 |
   +--------------+------------------+
@@ -48,6 +53,7 @@ Key constraint:
 
 ## Repo Layout
 
+- `apps/bin`: single-command entrypoint and host prerequisites checker (`doctor`).
 - `apps/cli`: CLI wrapper around the engine pipeline.
 - `apps/mcp`: MCP server exposing engine capabilities as tools.
 - `packages/engine`: discovery, decomposition, report generation, artifact generation, export, and workflow state machine.
@@ -165,4 +171,3 @@ To avoid confusion, these are intentionally out of scope for the current repo:
 - Direct Kubernetes cluster mutation / traffic shifting automation
 
 Those belong in a future "orchestrator service" built around the engine, after pilot validation and enterprise auth/policy requirements are finalized.
-

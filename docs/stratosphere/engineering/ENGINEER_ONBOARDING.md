@@ -3,6 +3,8 @@
 ## Goal
 Get a new engineer productive with Stratosphere in under 30 minutes.
 
+If you are running from source checkout and the `stratosphere` executable is not on your `PATH`, use `npm run stratosphere --` and `npm run mcp:start` equivalents.
+
 ## 1) Local Setup
 ```bash
 cd /Users/bradfairley/Documents/Playground/stratosphere
@@ -12,7 +14,7 @@ npm run build
 
 ## 2) Run a Full Example
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --strategy balanced \
   --intake-file fixtures/stratosphere/sample-intake.json \
@@ -23,7 +25,7 @@ npm run stratosphere -- \
 
 Optional guided intake (non-technical flow):
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --wizard \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --out-dir artifacts/stratosphere
@@ -61,7 +63,7 @@ npm run test:coverage
 ## 6) MCP Mode (Agent Access)
 Start the MCP server:
 ```bash
-npm run mcp:start
+stratosphere mcp
 ```
 
 Primary MCP tools for full flow:

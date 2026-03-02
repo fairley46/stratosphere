@@ -52,18 +52,47 @@ Stratosphere is not “click-to-migrate” in v1. It produces artifacts and an e
 
 ---
 
+## Single-binary install (on a VM)
+
+For SSH-first environments, use the Linux executable from [GitHub Releases](https://github.com/fairley46/stratosphere/releases).
+
+```bash
+VERSION=v0.1.0
+ARCH=linux-x64 # or linux-arm64
+
+curl -fsSLO "https://github.com/fairley46/stratosphere/releases/download/${VERSION}/stratosphere-${ARCH}"
+curl -fsSLO "https://github.com/fairley46/stratosphere/releases/download/${VERSION}/SHA256SUMS"
+grep "stratosphere-${ARCH}" SHA256SUMS | sha256sum -c -
+
+chmod +x "stratosphere-${ARCH}"
+mv "stratosphere-${ARCH}" stratosphere
+
+./stratosphere doctor
+./stratosphere mcp
+```
+
+Full on-box flow: `docs/stratosphere/engineering/ON_BOX_QUICKSTART.md`.
+
+If you are running from this source workspace instead of a release binary, use:
+
+```bash
+npm run stratosphere -- --help
+```
+
+---
+
 ## How to run it
 
 **From a runtime snapshot file:**
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --out-dir artifacts/my-migration
 ```
 
 **From SSH (live VM discovery):**
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --ssh-host 10.0.1.42 --ssh-user deploy \
   --intake-file my-intake.json \
   --out-dir artifacts/my-migration
@@ -71,7 +100,7 @@ npm run stratosphere -- \
 
 **Guided wizard (no JSON prep needed):**
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --wizard \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --out-dir artifacts/my-migration
@@ -81,11 +110,13 @@ npm run stratosphere -- \
 
 ## Ways to use it
 
-**CLI** — Run `npm run stratosphere -- --help` for all flags. Accepts snapshot files, local
-discovery, or live SSH. Optional: `--strategy`, `--intake-file`, `--workspace-file`,
-`--export-provider`. See `docs/stratosphere/engineering/QUICKSTART.md`.
+**CLI** — Run `stratosphere --help` for all flags. Accepts snapshot files, local discovery,
+or live SSH. Optional: `--strategy`, `--intake-file`, `--workspace-file`, `--export-provider`.
+For workspace development, `npm run stratosphere -- --help` still works.
+See `docs/stratosphere/engineering/QUICKSTART.md`.
 
-**MCP server** — Start with `npm run mcp:start`. Register as a local stdio server in any
+**MCP server** — Start with `stratosphere mcp` (or `npm run mcp:start` in workspace mode).
+Register as a local stdio server in any
 MCP-compatible AI environment (Claude Desktop, Opencode, etc.) and call
 `generate_migration_bundle` or `generate_local_vm_bundle` directly from chat.
 
@@ -98,6 +129,7 @@ call `generate_local_vm_bundle` to generate artifacts from local runtime state w
 
 **Engineers**
 - [Quickstart](docs/stratosphere/engineering/QUICKSTART.md) — install, run, extend
+- [On-Box Quickstart](docs/stratosphere/engineering/ON_BOX_QUICKSTART.md) — SSH-first install and MCP flow
 - [Engineer Onboarding](docs/stratosphere/engineering/ENGINEER_ONBOARDING.md) — architecture, CLI, MCP, tests
 - [Technical Architecture](docs/stratosphere/engineering/TECHNICAL_ARCHITECTURE.md) — package layout, engine internals
 

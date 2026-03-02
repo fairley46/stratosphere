@@ -2,12 +2,24 @@
 
 *For engineers getting Stratosphere running in under 10 minutes.*
 
+If you are running from source checkout and do not have the release binary on your `PATH`, replace `stratosphere` below with `npm run stratosphere --`.
+
+## Single binary commands (recommended on VMs)
+
+```bash
+stratosphere doctor
+stratosphere --help
+stratosphere mcp
+```
+
+For SSH-first install details, see `ON_BOX_QUICKSTART.md`.
+
 ## Generate a migration package from a runtime snapshot
 
 From the `stratosphere/` directory:
 
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --out-dir artifacts/stratosphere
 ```
@@ -28,7 +40,7 @@ npm run stratosphere -- \
 
 ```bash
 STRATOSPHERE_ENABLE_EXPORT_EXECUTION=true GITHUB_TOKEN=*** \
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --export-provider github \
   --export-owner my-org \
@@ -45,7 +57,7 @@ npm run stratosphere -- \
 ## Run guided intake wizard (plain language)
 
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --wizard \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --out-dir artifacts/stratosphere
@@ -54,7 +66,7 @@ npm run stratosphere -- \
 ## Generate with business intake + application workspace context
 
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --strategy balanced \
   --intake-file fixtures/stratosphere/sample-intake.json \
@@ -65,7 +77,7 @@ npm run stratosphere -- \
 ## Generate from local VM discovery (no runtime file)
 
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --local-discovery \
   --initiated-by platform-team \
   --signoff-required-approvers 2 \
@@ -81,7 +93,7 @@ npm run stratosphere -- \
 ## Optional: include SSH connection metadata
 
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --ssh-host 10.40.8.23 \
   --ssh-user migration-readonly \
@@ -92,13 +104,13 @@ npm run stratosphere -- \
 ## Print read-only SSH discovery command set
 
 ```bash
-npm run stratosphere -- --print-ssh-commands
+stratosphere --print-ssh-commands
 ```
 
 ## Start MCP server
 
 ```bash
-npm run mcp:start
+stratosphere mcp
 ```
 
 ## MCP local-VM flow

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   StratosphereError,
   getSshDiscoveryCommandSet,
@@ -406,9 +407,9 @@ function printUsage(): void {
   console.log(`Stratosphere CLI
 
 Usage:
-  npm run stratosphere -- --runtime-file fixtures/stratosphere/sample-runtime.json [--out-dir artifacts/stratosphere]
-  npm run stratosphere -- --local-discovery [--out-dir artifacts/stratosphere]
-  npm run stratosphere -- --ssh-host <host> --ssh-user <user> [--ssh-port <port>] [--out-dir artifacts/stratosphere]
+  stratosphere --runtime-file fixtures/stratosphere/sample-runtime.json [--out-dir artifacts/stratosphere]
+  stratosphere --local-discovery [--out-dir artifacts/stratosphere]
+  stratosphere --ssh-host <host> --ssh-user <user> [--ssh-port <port>] [--out-dir artifacts/stratosphere]
 
 Optional:
   --migration-id <id>
@@ -442,8 +443,8 @@ function printError(error: unknown): void {
   }
 }
 
-async function main(): Promise<void> {
-  const args = parseArgs(process.argv.slice(2));
+export async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {
+  const args = parseArgs(argv);
 
   if (getBool(args, "help")) {
     printUsage();
@@ -471,8 +472,10 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
-  printError(error);
-  printUsage();
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runCli().catch((error: unknown) => {
+    printError(error);
+    printUsage();
+    process.exit(1);
+  });
+}

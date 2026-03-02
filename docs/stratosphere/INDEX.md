@@ -1,6 +1,6 @@
 # Stratosphere Docs
 
-> Interrogate the VM. Explain the system. Generate the migration plan.
+> Interrogate. Explain. Accelerate.
 
 Use this as your navigation hub. Pick your audience below.
 
@@ -11,6 +11,7 @@ Use this as your navigation hub. Pick your audience below.
 | Doc | What it covers |
 |---|---|
 | [Quickstart](engineering/QUICKSTART.md) | Install, run your first migration, extend the engine |
+| [On-Box Quickstart](engineering/ON_BOX_QUICKSTART.md) | SSH-first single-binary install and MCP flow |
 | [Engineer Onboarding](engineering/ENGINEER_ONBOARDING.md) | Repo layout, CLI flags, MCP tools, test patterns |
 | [Technical Architecture](engineering/TECHNICAL_ARCHITECTURE.md) | Package structure, engine pipeline, extension points |
 
