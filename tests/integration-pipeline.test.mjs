@@ -53,7 +53,11 @@ test("runMigrationPipeline writes core reports and export plan", async () => {
   const readiness = JSON.parse(readFileSync(join(outDir, "reports/readiness.json"), "utf8"));
   const roiEstimate = JSON.parse(readFileSync(join(outDir, "reports/roi-estimate.json"), "utf8"));
   const strategyOptions = JSON.parse(readFileSync(join(outDir, "reports/migration-options.json"), "utf8"));
+  const businessImpact = JSON.parse(readFileSync(join(outDir, "reports/business-impact.json"), "utf8"));
+  const cutoverPlan = JSON.parse(readFileSync(join(outDir, "reports/cutover-plan.json"), "utf8"));
+  const glossary = JSON.parse(readFileSync(join(outDir, "reports/glossary.json"), "utf8"));
   const runtimeProfileSummary = JSON.parse(readFileSync(join(outDir, "reports/runtime-profile-summary.json"), "utf8"));
+  const runtimeWindowProfile = JSON.parse(readFileSync(join(outDir, "reports/runtime-profile-window.json"), "utf8"));
   const sourceAnalysis = JSON.parse(readFileSync(join(outDir, "reports/source-analysis.json"), "utf8"));
   const workspaceReport = JSON.parse(readFileSync(join(outDir, "reports/workspace.json"), "utf8"));
   assert.ok(currentMap.includes("Current-State Application Map"));
@@ -64,7 +68,11 @@ test("runMigrationPipeline writes core reports and export plan", async () => {
   assert.ok(readiness.score >= 0);
   assert.ok(roiEstimate.projections.currentMonthlyUsd >= roiEstimate.projections.projectedMonthlyUsd);
   assert.ok(Array.isArray(strategyOptions.options));
+  assert.ok(Array.isArray(businessImpact.assessments));
+  assert.equal(cutoverPlan.mode, "blue-green");
+  assert.ok(glossary.entries.length > 0);
   assert.ok(runtimeProfileSummary.processCount > 0);
+  assert.ok(runtimeWindowProfile.sampleCount >= 1);
   assert.ok(Array.isArray(sourceAnalysis.componentMappings));
   assert.equal(workspaceReport.workspaceName, "billing-app");
 

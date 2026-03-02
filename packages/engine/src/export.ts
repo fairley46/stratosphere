@@ -8,8 +8,11 @@ import {
   renderRoiMarkdown,
   renderStrategyOptionsMarkdown,
 } from "./decision.js";
+import { buildBusinessImpactReport, renderBusinessImpactMarkdown } from "./business-impact.js";
+import { buildBlueGreenCutoverPlan, renderBlueGreenCutoverPlanMarkdown } from "./cutover.js";
+import { buildGlossaryPack, renderGlossaryMarkdown } from "./glossary.js";
 import { buildExecutiveSummary } from "./intake.js";
-import { buildRuntimeProfileSummary } from "./profile.js";
+import { buildRuntimeProfileSummary, buildRuntimeWindowProfile, renderRuntimeWindowProfileMarkdown } from "./profile.js";
 import { buildSourceAnalysis } from "./source-analysis.js";
 import type {
   ApplicationWorkspace,
@@ -106,6 +109,20 @@ function writeSummary(
     processCount: discovery.runtime.processes.length,
     intake,
   });
+  const businessImpact = buildBusinessImpactReport({
+    decomposition,
+    validation,
+    intake,
+    workspace,
+    readinessUnknowns: readiness.unknowns,
+  });
+  const cutoverPlan = buildBlueGreenCutoverPlan({
+    decomposition,
+    intake,
+    readinessScore: readiness.score,
+  });
+  const runtimeWindowProfile = buildRuntimeWindowProfile(discovery);
+  const sourceAnalysis = buildSourceAnalysis(discovery, decomposition);
 
   const summary = {
     runId: audit.runId,
@@ -130,8 +147,11 @@ function writeSummary(
     strategyReport,
     readiness,
     roi,
+    businessImpact,
+    cutoverPlan,
     runtimeProfile: buildRuntimeProfileSummary(discovery),
-    sourceAnalysis: buildSourceAnalysis(discovery, decomposition),
+    runtimeWindowProfile,
+    sourceAnalysis,
     audit,
   };
 
@@ -161,20 +181,44 @@ export function exportBundle(
     processCount: discovery.runtime.processes.length,
     intake,
   });
+  const businessImpact = buildBusinessImpactReport({
+    decomposition,
+    validation,
+    intake,
+    workspace,
+    readinessUnknowns: readiness.unknowns,
+  });
+  const cutoverPlan = buildBlueGreenCutoverPlan({
+    decomposition,
+    intake,
+    readinessScore: readiness.score,
+  });
+  const glossary = buildGlossaryPack();
+  const runtimeProfile = buildRuntimeProfileSummary(discovery);
+  const runtimeWindowProfile = buildRuntimeWindowProfile(discovery);
+  const sourceAnalysis = buildSourceAnalysis(discovery, decomposition);
 
   for (const artifact of bundle.artifacts) {
     writeArtifact(outDir, artifact.path, artifact.content);
   }
 
   writeArtifact(outDir, "reports/vm-dna-graph.json", JSON.stringify(graph, null, 2));
-  writeArtifact(outDir, "reports/runtime-profile-summary.json", JSON.stringify(buildRuntimeProfileSummary(discovery), null, 2));
-  writeArtifact(outDir, "reports/source-analysis.json", JSON.stringify(buildSourceAnalysis(discovery, decomposition), null, 2));
+  writeArtifact(outDir, "reports/runtime-profile-summary.json", JSON.stringify(runtimeProfile, null, 2));
+  writeArtifact(outDir, "reports/runtime-profile-window.json", JSON.stringify(runtimeWindowProfile, null, 2));
+  writeArtifact(outDir, "reports/runtime-profile-window.md", renderRuntimeWindowProfileMarkdown(runtimeWindowProfile));
+  writeArtifact(outDir, "reports/source-analysis.json", JSON.stringify(sourceAnalysis, null, 2));
   writeArtifact(outDir, "reports/migration-options.json", JSON.stringify(strategyReport, null, 2));
   writeArtifact(outDir, "reports/migration-options.md", renderStrategyOptionsMarkdown(strategyReport));
   writeArtifact(outDir, "reports/readiness.json", JSON.stringify(readiness, null, 2));
   writeArtifact(outDir, "reports/readiness.md", renderReadinessMarkdown(readiness));
   writeArtifact(outDir, "reports/roi-estimate.json", JSON.stringify(roi, null, 2));
   writeArtifact(outDir, "reports/roi-estimate.md", renderRoiMarkdown(roi));
+  writeArtifact(outDir, "reports/business-impact.json", JSON.stringify(businessImpact, null, 2));
+  writeArtifact(outDir, "reports/business-impact.md", renderBusinessImpactMarkdown(businessImpact));
+  writeArtifact(outDir, "reports/cutover-plan.json", JSON.stringify(cutoverPlan, null, 2));
+  writeArtifact(outDir, "reports/cutover-plan.md", renderBlueGreenCutoverPlanMarkdown(cutoverPlan));
+  writeArtifact(outDir, "reports/glossary.json", JSON.stringify(glossary, null, 2));
+  writeArtifact(outDir, "reports/glossary.md", renderGlossaryMarkdown(glossary));
   writeArtifact(outDir, "reports/application-map-current.md", applicationMaps.currentState.markdown);
   writeArtifact(outDir, "reports/application-map-current.mmd", applicationMaps.currentState.mermaid);
   writeArtifact(outDir, "reports/application-map-current-summary.json", JSON.stringify(applicationMaps.currentState.summary, null, 2));
@@ -215,6 +259,8 @@ export function exportBundle(
         strategyReport,
         readiness,
         roi,
+        businessImpact,
+        cutoverPlan,
         intake,
         workspace,
       },
@@ -246,6 +292,14 @@ export function exportBundle(
       `- Monthly savings: $${roi.projections.monthlySavingsUsd}`,
       `- One-time migration: $${roi.projections.oneTimeMigrationUsd}`,
       `- Payback (months): ${roi.projections.paybackMonths ?? "n/a"}`,
+      "",
+      "## Top Risks",
+      ...businessImpact.topRisks.map((item) => `- ${item.category}: ${item.severity}`),
+      "",
+      "## Cutover Plan",
+      `- Mode: ${cutoverPlan.mode}`,
+      `- Stage count: ${cutoverPlan.stages.length}`,
+      `- Rollback simulations: ${cutoverPlan.rollbackSimulations.length}`,
       "",
     ].join("\n")
   );

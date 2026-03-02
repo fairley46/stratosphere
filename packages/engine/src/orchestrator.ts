@@ -6,7 +6,7 @@ import { validateBundle } from "./validate.js";
 import { buildApplicationMaps } from "./maps.js";
 import { LocalDiscoveryAdapter, SshDiscoveryAdapter, SnapshotDiscoveryAdapter } from "./discovery.js";
 import { exportBundle } from "./export.js";
-import { planRepositoryExport } from "./repository-export.js";
+import { runRepositoryExport } from "./repository-export.js";
 import { StratosphereError } from "./errors.js";
 import type {
   AuditMetadata,
@@ -122,9 +122,26 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
   const bundle = generateArtifacts(request.migrationId, discovery, decomposition);
   const validation = validateBundle(bundle, decomposition);
   const signoffCheckpoint = buildSignoffCheckpoint(request);
-  const exportResult = planRepositoryExport(bundle, request.exportRequest);
-
   audit.completedAt = new Date().toISOString();
+
+  // First write bundle and core reports. Export status is appended after repository export phase.
+  exportBundle(
+    request.outDir,
+    bundle,
+    discovery,
+    graph,
+    decomposition,
+    applicationMaps,
+    validation,
+    audit,
+    signoffCheckpoint,
+    strategy,
+    request.intake,
+    request.workspace,
+    undefined
+  );
+
+  const exportResult = await runRepositoryExport(request.outDir, bundle, request.exportRequest);
 
   const result: MigrationRunResult = {
     discovery,
@@ -141,6 +158,7 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     exportResult,
   };
 
+  // Rewrite summary/report files with final export status.
   exportBundle(
     request.outDir,
     bundle,

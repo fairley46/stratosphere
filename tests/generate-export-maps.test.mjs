@@ -170,6 +170,10 @@ test("buildApplicationMaps and exportBundle write expected map and signoff outpu
   assert.ok(readFileSync(join(outDir, "reports/application-map-future.md"), "utf8").includes("Future-State Application Map"));
   assert.ok(readFileSync(join(outDir, "reports/signoff-template.md"), "utf8").includes("Human Sign-Off Checkpoint"));
   assert.ok(readFileSync(join(outDir, "reports/blue-green-runbook.md"), "utf8").includes("Rollback"));
+  assert.ok(readFileSync(join(outDir, "reports/cutover-plan.md"), "utf8").includes("Blue/Green Cutover Plan"));
+  assert.ok(readFileSync(join(outDir, "reports/business-impact.md"), "utf8").includes("Business Impact"));
+  assert.ok(readFileSync(join(outDir, "reports/glossary.md"), "utf8").includes("Stratosphere Glossary"));
+  assert.ok(readFileSync(join(outDir, "reports/runtime-profile-window.md"), "utf8").includes("Runtime Window Profile"));
   assert.throws(() => readFileSync(join(outDir, "reports/repository-export.json"), "utf8"));
 
   const summaryJson = JSON.parse(readFileSync(join(outDir, "reports/migration-summary.json"), "utf8"));

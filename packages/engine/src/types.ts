@@ -28,7 +28,17 @@ export type RuntimeSnapshot = {
   processes: RuntimeProcess[];
   connections: RuntimeConnection[];
   scheduledJobs: ScheduledJob[];
+  profileWindowSamples?: RuntimeWindowSample[];
   source?: SourceHints;
+};
+
+export type RuntimeWindowSample = {
+  capturedAt: string;
+  processes: Array<{
+    processName: string;
+    cpuPercent: number;
+    memoryMb: number;
+  }>;
 };
 
 export type RuntimeProcess = {
@@ -179,13 +189,21 @@ export type RepositoryExportRequest = {
   owner: string;
   repository: string;
   visibility?: "private" | "internal" | "public";
+  branchName?: string;
+  targetBranch?: string;
+  providerApiBaseUrl?: string;
+  providerWebBaseUrl?: string;
+  executionTokenEnvVar?: string;
+  authMode?: "token" | "oauth";
+  commitAuthorName?: string;
+  commitAuthorEmail?: string;
   dryRun?: boolean;
 };
 
 export type RepositoryExportAction = {
   kind: "create-repository" | "create-branch" | "push-artifacts" | "open-merge-request";
   description: string;
-  status: "planned" | "skipped";
+  status: "planned" | "skipped" | "executed" | "failed";
 };
 
 export type RepositoryExportResult = {
@@ -193,6 +211,13 @@ export type RepositoryExportResult = {
   dryRun: boolean;
   actions: RepositoryExportAction[];
   warnings: string[];
+  execution?: {
+    requested: boolean;
+    executed: boolean;
+    reference?: string;
+    reason?: string;
+    pullRequestUrl?: string;
+  };
 };
 
 export type BusinessCriticality = "low" | "medium" | "high";
@@ -303,4 +328,73 @@ export type MigrationRunResult = {
   exportResult?: RepositoryExportResult;
   intake?: BusinessIntake;
   workspace?: ApplicationWorkspace;
+};
+
+export type ExecutionState =
+  | "DRAFTING"
+  | "DISCOVERED"
+  | "REVIEW_REQUIRED"
+  | "REVISION_REQUIRED"
+  | "APPROVAL_PENDING"
+  | "PREFLIGHT_RUNNING"
+  | "EXECUTION_READY"
+  | "EXECUTING"
+  | "PAUSED_FOR_REVIEW"
+  | "ROLLBACK_RUNNING"
+  | "COMPLETED"
+  | "FAILED";
+
+export type ReviewDecision = "accept" | "request_changes";
+
+export type ExecutionFeedback = {
+  by: string;
+  at: string;
+  decision: ReviewDecision;
+  notes: string;
+};
+
+export type ExecutionApproval = {
+  by: string;
+  at: string;
+};
+
+export type PreflightCheck = {
+  id: string;
+  title: string;
+  passed: boolean;
+  message: string;
+};
+
+export type ExecutionStep = {
+  id: string;
+  title: string;
+  status: "pending" | "running" | "completed" | "failed" | "paused";
+  startedAt?: string;
+  completedAt?: string;
+  details?: string;
+};
+
+export type ExportExecutionStatus = {
+  requested: boolean;
+  executed: boolean;
+  provider?: RepositoryProvider;
+  reference?: string;
+  message: string;
+};
+
+export type ExecutionJob = {
+  jobId: string;
+  migrationId: string;
+  bundleDir: string;
+  targetPlatform: "kubernetes";
+  targetEnvironment: string;
+  state: ExecutionState;
+  requiredApprovers: number;
+  reviewFeedback: ExecutionFeedback[];
+  approvals: ExecutionApproval[];
+  preflightChecks: PreflightCheck[];
+  executionSteps: ExecutionStep[];
+  exportExecution: ExportExecutionStatus;
+  revisionCount: number;
+  lastUpdatedAt: string;
 };
