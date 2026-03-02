@@ -145,6 +145,38 @@ function parseProcesses(output: string): RuntimeProcess[] {
   return out;
 }
 
+function parseProcessSkeletonsFromLsof(output: string): RuntimeProcess[] {
+  const out: RuntimeProcess[] = [];
+  const seen = new Set<number>();
+
+  for (const line of output.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("COMMAND")) continue;
+    const match = trimmed.match(/^(\S+)\s+(\d+)\s+(\S+)/);
+    if (!match) continue;
+
+    const name = match[1];
+    const pid = Number.parseInt(match[2], 10);
+    const user = match[3];
+    if (Number.isNaN(pid) || seen.has(pid)) continue;
+    seen.add(pid);
+
+    out.push({
+      pid,
+      name,
+      command: name,
+      user,
+      cpuPercent: 0,
+      memoryMb: 128,
+      listeningPorts: [],
+      fileWrites: [],
+      envHints: {},
+    });
+  }
+
+  return out;
+}
+
 function parseListeningPorts(output: string, processes: RuntimeProcess[]): void {
   const byPid = new Map(processes.map((process) => [process.pid, process]));
   const byName = new Map<string, RuntimeProcess[]>();
@@ -400,6 +432,42 @@ async function runSshCommand(connection: VmConnection, command: DiscoveryCommand
   }
 }
 
+async function runLocalCommand(command: DiscoveryCommand): Promise<ExecutedCommand> {
+  const started = Date.now();
+
+  try {
+    const { stdout, stderr } = await execFileAsync("sh", ["-lc", command.command], {
+      timeout: SSH_COMMAND_TIMEOUT_MS,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+
+    return {
+      key: command.key,
+      command: command.command,
+      stdout,
+      stderr,
+      exitCode: 0,
+      durationMs: Date.now() - started,
+    };
+  } catch (error) {
+    const err = error as {
+      code?: number | string;
+      stdout?: string;
+      stderr?: string;
+      message?: string;
+    };
+
+    return {
+      key: command.key,
+      command: command.command,
+      stdout: err.stdout ?? "",
+      stderr: err.stderr ?? err.message ?? "",
+      exitCode: typeof err.code === "number" ? err.code : 255,
+      durationMs: Date.now() - started,
+    };
+  }
+}
+
 function toCommandResult(command: ExecutedCommand): CommandExecutionResult {
   return {
     command: command.command,
@@ -417,7 +485,10 @@ function buildRuntimeSnapshot(results: ExecutedCommand[]): RuntimeSnapshot {
   const osDetails = parseOsRelease(byKey.get("os-release")?.stdout ?? "");
   const ip = parseIpAddress(byKey.get("ip-brief")?.stdout ?? "");
 
-  const processes = parseProcesses(byKey.get("processes")?.stdout ?? "");
+  let processes = parseProcesses(byKey.get("processes")?.stdout ?? "");
+  if (processes.length === 0) {
+    processes = parseProcessSkeletonsFromLsof(byKey.get("connections")?.stdout ?? "");
+  }
   parseListeningPorts(byKey.get("listening-ports")?.stdout ?? "", processes);
   parseStatefulHandles(byKey.get("stateful-file-handles")?.stdout ?? "", processes);
 
@@ -485,6 +556,40 @@ export class SshDiscoveryAdapter implements DiscoveryAdapter {
     if (mergedRuntime.processes.length === 0) {
       throw new Error(
         "SSH discovery collected no process data. Ensure the SSH user has access to ps/ss/lsof and provide runtimeSnapshot fallback if needed."
+      );
+    }
+
+    return {
+      runtime: mergedRuntime,
+      evidence: {
+        collector: this.name,
+        commands: SSH_DISCOVERY_COMMANDS.map((command) => command.command),
+        warnings,
+        collectedAt: new Date().toISOString(),
+        commandResults: commandRuns.map(toCommandResult),
+      },
+    };
+  }
+}
+
+export class LocalDiscoveryAdapter implements DiscoveryAdapter {
+  readonly name = "local-readonly";
+
+  async collect(request: DiscoveryRequest): Promise<DiscoveryResult> {
+    const commandRuns = await Promise.all(SSH_DISCOVERY_COMMANDS.map((command) => runLocalCommand(command)));
+
+    const warnings: string[] = [];
+    const failed = commandRuns.filter((run) => run.exitCode !== 0);
+    if (failed.length > 0) {
+      warnings.push(`${failed.length} local discovery command(s) returned non-zero exit codes.`);
+    }
+
+    const parsedRuntime = buildRuntimeSnapshot(commandRuns);
+    const mergedRuntime = mergeFallbackSnapshot(parsedRuntime, request.runtimeSnapshot);
+
+    if (mergedRuntime.processes.length === 0) {
+      throw new Error(
+        "Local discovery collected no process data. Ensure the process has permission to run ps/ss/lsof or provide runtimeSnapshot fallback."
       );
     }
 

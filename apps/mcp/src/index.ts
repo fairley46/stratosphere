@@ -85,9 +85,10 @@ function fail(code: string, message: string, details?: Record<string, unknown>) 
 
 server.tool(
   "generate_migration_bundle",
-  "Generate a Stratosphere migration bundle from a VM runtime snapshot JSON file.",
+  "Generate a Stratosphere migration bundle from runtime snapshot input, SSH interrogation, or local VM discovery.",
   {
-    runtime_file: z.string().describe("Path to runtime snapshot JSON"),
+    runtime_file: z.string().optional().describe("Optional path to runtime snapshot JSON"),
+    local_discovery: z.boolean().optional().describe("Run read-only discovery directly on the host running this MCP server"),
     out_dir: z.string().default("artifacts/stratosphere").describe("Output directory for generated bundle"),
     migration_id: z.string().optional().describe("Optional migration id override"),
     initiated_by: z.string().optional().describe("Operator name for audit trail"),
@@ -105,6 +106,7 @@ server.tool(
   async (input) => {
     const {
       runtime_file,
+      local_discovery,
       out_dir,
       migration_id,
       initiated_by,
@@ -121,17 +123,28 @@ server.tool(
     } = input;
 
     try {
-      const runtimeFile = resolve(runtime_file);
+      const runtimeFile = runtime_file ? resolve(runtime_file) : undefined;
       const outputDir = resolve(out_dir);
-      const runtimeSnapshot = loadRuntimeSnapshot(runtimeFile);
+      const runtimeSnapshot = runtimeFile ? loadRuntimeSnapshot(runtimeFile) : undefined;
+      const connection = buildConnection(ssh_host, ssh_user, ssh_port, ssh_key);
+      const discoveryMode = local_discovery ? "local" : connection ? "ssh" : "snapshot";
+
+      if (!runtimeSnapshot && discoveryMode === "snapshot") {
+        return fail(
+          "INVALID_DISCOVERY_INPUT",
+          "runtime_file is required unless local_discovery is true or ssh_host/ssh_user are provided.",
+          { runtime_file, local_discovery, ssh_host, ssh_user }
+        );
+      }
 
       const request: MigrationRunRequest = {
-        migrationId: migration_id ?? runtimeSnapshot.host.hostname,
+        migrationId: migration_id ?? runtimeSnapshot?.host.hostname ?? "live-vm-migration",
         runtimeSnapshot,
         outDir: outputDir,
+        discoveryMode,
         initiatedBy: initiated_by,
         signoffRequiredApprovers: signoff_required_approvers,
-        connection: buildConnection(ssh_host, ssh_user, ssh_port, ssh_key),
+        connection: local_discovery ? undefined : connection,
         exportRequest: buildExportRequest(
           export_provider,
           export_owner,
@@ -174,6 +187,7 @@ server.tool(
     } catch (error) {
       return fail("MIGRATION_GENERATION_FAILED", String(error), {
         runtime_file,
+        local_discovery,
         out_dir,
       });
     }
@@ -192,6 +206,58 @@ server.tool(
       },
     ],
   })
+);
+
+server.tool(
+  "generate_local_vm_bundle",
+  "Generate a migration bundle by running read-only discovery on the same VM that hosts this MCP server.",
+  {
+    out_dir: z.string().default("artifacts/stratosphere").describe("Output directory for generated bundle"),
+    migration_id: z.string().optional().describe("Optional migration id override"),
+    runtime_file: z.string().optional().describe("Optional runtime snapshot fallback file"),
+    initiated_by: z.string().optional().describe("Operator name for audit trail"),
+    signoff_required_approvers: z.number().optional().describe("Required number of approvers for sign-off"),
+  },
+  async ({ out_dir, migration_id, runtime_file, initiated_by, signoff_required_approvers }) => {
+    try {
+      const outputDir = resolve(out_dir);
+      const runtimeSnapshot = runtime_file ? loadRuntimeSnapshot(resolve(runtime_file)) : undefined;
+
+      const request: MigrationRunRequest = {
+        migrationId: migration_id ?? runtimeSnapshot?.host.hostname ?? "local-vm-migration",
+        runtimeSnapshot,
+        outDir: outputDir,
+        discoveryMode: "local",
+        initiatedBy: initiated_by,
+        signoffRequiredApprovers: signoff_required_approvers,
+      };
+
+      const result = await runMigrationPipeline(request);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                migrationId: request.migrationId,
+                outDir: outputDir,
+                summary: summarizeRun(result),
+                validation: result.validation,
+                signoffCheckpoint: result.signoffCheckpoint,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return fail("LOCAL_VM_GENERATION_FAILED", String(error), {
+        out_dir,
+        runtime_file,
+      });
+    }
+  }
 );
 
 server.tool(

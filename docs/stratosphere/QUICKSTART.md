@@ -22,6 +22,16 @@ npm run stratosphere -- \
   --export-repo billing-migration
 ```
 
+## Generate from local VM discovery (no runtime file)
+
+```bash
+npm run stratosphere -- \
+  --local-discovery \
+  --initiated-by platform-team \
+  --signoff-required-approvers 2 \
+  --out-dir artifacts/stratosphere
+```
+
 ## Optional: include SSH connection metadata
 
 ```bash
@@ -44,6 +54,10 @@ npm run stratosphere -- --print-ssh-commands
 ```bash
 npm run mcp:start
 ```
+
+## MCP local-VM flow
+
+Use MCP tool `generate_local_vm_bundle` when Stratosphere MCP is running on the target VM.
 
 ## Run tests
 

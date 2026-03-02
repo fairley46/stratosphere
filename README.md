@@ -12,6 +12,14 @@ npm run stratosphere -- --runtime-file fixtures/stratosphere/sample-runtime.json
 
 Outputs include Dockerfiles, Helm templates, Terraform scaffolding, VM DNA reports, and blue/green runbook artifacts.
 
+## Local VM Discovery (No SSH)
+
+Run Stratosphere directly on the VM and interrogate local runtime state:
+
+```bash
+npm run stratosphere -- --local-discovery --out-dir artifacts/stratosphere
+```
+
 ## Validate
 
 ```bash
@@ -41,5 +49,24 @@ npm run mcp:start
 Tools exposed:
 - `generate_migration_bundle`
 - `list_ssh_discovery_commands`
+- `generate_local_vm_bundle`
 - `validate_migration_bundle`
 - `explain_decomposition`
+
+## Opencode Local VM Use Case
+
+When running on the target VM, register Stratosphere MCP in Opencode as a local stdio server:
+
+```json
+{
+  "mcpServers": {
+    "stratosphere": {
+      "command": "npm",
+      "args": ["run", "mcp:start"],
+      "cwd": "/Users/bradfairley/Documents/Playground/stratosphere"
+    }
+  }
+}
+```
+
+Then call `generate_local_vm_bundle` from Opencode to generate artifacts from local runtime state.

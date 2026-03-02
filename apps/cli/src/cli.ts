@@ -112,15 +112,25 @@ function parseExportRequest(args: ArgMap): RepositoryExportRequest | undefined {
 }
 
 function buildRequest(args: ArgMap): MigrationRunRequest {
-  const runtimeFile = resolve(INVOKE_CWD, getString(args, "runtime-file"));
-  const runtimeSnapshot = loadSnapshot(runtimeFile);
-  const defaultMigrationId = basename(runtimeFile).replace(/\.json$/i, "");
+  const runtimeFileRaw = getOptionalString(args, "runtime-file");
+  const runtimeFile = runtimeFileRaw ? resolve(INVOKE_CWD, runtimeFileRaw) : undefined;
+  const runtimeSnapshot = runtimeFile ? loadSnapshot(runtimeFile) : undefined;
+  const connection = parseConnection(args);
+  const localDiscovery = getBool(args, "local-discovery");
+  const discoveryMode = localDiscovery ? "local" : connection ? "ssh" : "snapshot";
+
+  if (!runtimeSnapshot && discoveryMode === "snapshot") {
+    throw new Error("runtime-file is required unless --local-discovery or --ssh-host/--ssh-user is provided.");
+  }
+
+  const defaultMigrationId = runtimeFile ? basename(runtimeFile).replace(/\.json$/i, "") : "live-vm-migration";
 
   return {
     migrationId: getString(args, "migration-id", defaultMigrationId),
     runtimeSnapshot,
     outDir: resolve(INVOKE_CWD, getString(args, "out-dir", "artifacts/stratosphere")),
-    connection: parseConnection(args),
+    discoveryMode,
+    connection: localDiscovery ? undefined : connection,
     initiatedBy: getOptionalString(args, "initiated-by"),
     signoffRequiredApprovers: getOptionalNumber(args, "signoff-required-approvers"),
     exportRequest: parseExportRequest(args),
@@ -132,11 +142,13 @@ function printUsage(): void {
 
 Usage:
   npm run stratosphere -- --runtime-file fixtures/stratosphere/sample-runtime.json [--out-dir artifacts/stratosphere]
+  npm run stratosphere -- --local-discovery [--out-dir artifacts/stratosphere]
 
 Optional:
   --migration-id <id>
   --initiated-by <name>
   --signoff-required-approvers <n>
+  --local-discovery
   --ssh-host <host> --ssh-user <user> [--ssh-port <port>] [--ssh-key <path>]
   --export-provider <github|gitlab> --export-owner <owner> --export-repo <repo> [--export-visibility <private|internal|public>] [--export-execute]
   --print-ssh-commands

@@ -1,4 +1,5 @@
 export type WorkloadKind = "Deployment" | "StatefulSet" | "CronJob";
+export type DiscoveryMode = "snapshot" | "ssh" | "local";
 
 export type StackType = "java-spring" | "dotnet" | "nodejs" | "python" | "unknown";
 
@@ -11,6 +12,7 @@ export type VmConnection = {
 
 export type DiscoveryRequest = {
   migrationId: string;
+  mode?: DiscoveryMode;
   connection?: VmConnection;
   runtimeSnapshot?: RuntimeSnapshot;
 };
@@ -209,8 +211,9 @@ export type HumanSignoffCheckpoint = {
 
 export type MigrationRunRequest = {
   migrationId: string;
-  runtimeSnapshot: RuntimeSnapshot;
+  runtimeSnapshot?: RuntimeSnapshot;
   outDir: string;
+  discoveryMode?: DiscoveryMode;
   connection?: VmConnection;
   initiatedBy?: string;
   signoffRequiredApprovers?: number;

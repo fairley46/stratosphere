@@ -3,7 +3,7 @@ import { buildVmDnaGraph } from "./graph.js";
 import { decomposeRuntime } from "./decompose.js";
 import { generateArtifacts } from "./generate.js";
 import { validateBundle } from "./validate.js";
-import { SshDiscoveryAdapter, SnapshotDiscoveryAdapter } from "./discovery.js";
+import { LocalDiscoveryAdapter, SshDiscoveryAdapter, SnapshotDiscoveryAdapter } from "./discovery.js";
 import { exportBundle } from "./export.js";
 import { planRepositoryExport } from "./repository-export.js";
 import type {
@@ -14,26 +14,31 @@ import type {
   HumanSignoffCheckpoint,
   MigrationRunRequest,
   MigrationRunResult,
+  DiscoveryMode,
   RuntimeSnapshot,
   VmDnaGraph,
 } from "./types.js";
 
 function pickAdapter(request: DiscoveryRequest): DiscoveryAdapter {
+  if (request.mode === "local") return new LocalDiscoveryAdapter();
+  if (request.mode === "ssh") return new SshDiscoveryAdapter();
+  if (request.mode === "snapshot") return new SnapshotDiscoveryAdapter();
   if (request.connection) return new SshDiscoveryAdapter();
   return new SnapshotDiscoveryAdapter();
 }
 
-function hashInput(migrationId: string, runtimeSnapshot: RuntimeSnapshot): string {
-  return createHash("sha256").update(`${migrationId}:${JSON.stringify(runtimeSnapshot)}`).digest("hex");
+function hashInput(migrationId: string, runtimeSnapshot: RuntimeSnapshot | undefined, mode: DiscoveryMode): string {
+  const base = runtimeSnapshot ? JSON.stringify(runtimeSnapshot) : `mode:${mode}:no-runtime-snapshot`;
+  return createHash("sha256").update(`${migrationId}:${base}`).digest("hex");
 }
 
-function buildAudit(request: MigrationRunRequest, startedAt: string): AuditMetadata {
+function buildAudit(request: MigrationRunRequest, startedAt: string, mode: DiscoveryMode): AuditMetadata {
   return {
     runId: randomUUID(),
     startedAt,
     completedAt: startedAt,
     initiatedBy: request.initiatedBy ?? "unknown",
-    inputHashSha256: hashInput(request.migrationId, request.runtimeSnapshot),
+    inputHashSha256: hashInput(request.migrationId, request.runtimeSnapshot, mode),
   };
 }
 
@@ -70,16 +75,23 @@ export function previewDecomposition(migrationId: string, runtimeSnapshot: Runti
 
 export async function runMigrationPipeline(request: MigrationRunRequest): Promise<MigrationRunResult> {
   const startedAt = new Date().toISOString();
-  const audit = buildAudit(request, startedAt);
+  const mode: DiscoveryMode = request.discoveryMode ?? (request.connection ? "ssh" : "snapshot");
+  if (mode === "snapshot" && !request.runtimeSnapshot) {
+    throw new Error("runtimeSnapshot is required when discoveryMode is snapshot.");
+  }
+
+  const audit = buildAudit(request, startedAt, mode);
 
   const adapter = pickAdapter({
     migrationId: request.migrationId,
+    mode,
     connection: request.connection,
     runtimeSnapshot: request.runtimeSnapshot,
   });
 
   const discovery = await adapter.collect({
     migrationId: request.migrationId,
+    mode,
     connection: request.connection,
     runtimeSnapshot: request.runtimeSnapshot,
   });
