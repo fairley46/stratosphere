@@ -23,6 +23,18 @@ Run Stratosphere directly on the VM and interrogate local runtime state:
 npm run stratosphere -- --local-discovery --out-dir artifacts/stratosphere
 ```
 
+## Input Modes
+
+- `snapshot`: provide `--runtime-file` JSON
+- `local`: provide `--local-discovery` (runs read-only commands on the same VM)
+- `ssh`: provide `--ssh-host` + `--ssh-user` (optional `--ssh-port`, `--ssh-key`)
+
+CLI validates conflicting/missing flags and returns structured errors with:
+- `code`
+- `message`
+- `hint`
+- `details`
+
 ## Validate
 
 ```bash

@@ -7,6 +7,7 @@ import { buildApplicationMaps } from "./maps.js";
 import { LocalDiscoveryAdapter, SshDiscoveryAdapter, SnapshotDiscoveryAdapter } from "./discovery.js";
 import { exportBundle } from "./export.js";
 import { planRepositoryExport } from "./repository-export.js";
+import { StratosphereError } from "./errors.js";
 import type {
   AuditMetadata,
   DecompositionResult,
@@ -78,7 +79,12 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
   const startedAt = new Date().toISOString();
   const mode: DiscoveryMode = request.discoveryMode ?? (request.connection ? "ssh" : "snapshot");
   if (mode === "snapshot" && !request.runtimeSnapshot) {
-    throw new Error("runtimeSnapshot is required when discoveryMode is snapshot.");
+    throw new StratosphereError({
+      code: "INPUT_MISSING",
+      message: "runtimeSnapshot is required when discoveryMode is snapshot.",
+      hint: "Provide a runtime file or switch discovery mode to local/ssh.",
+      details: { mode },
+    });
   }
 
   const audit = buildAudit(request, startedAt, mode);

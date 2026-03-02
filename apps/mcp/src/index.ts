@@ -3,11 +3,13 @@ import { resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
+  StratosphereError,
   buildApplicationMaps,
   getSshDiscoveryCommandSet,
   previewDecomposition,
   runMigrationPipeline,
   summarizeRun,
+  toErrorPayload,
   validateBundleDirectory,
   type MigrationRunRequest,
   type RepositoryExportRequest,
@@ -22,8 +24,28 @@ const server = new McpServer({
 });
 
 function loadRuntimeSnapshot(filePath: string): RuntimeSnapshot {
-  const payload = readFileSync(filePath, "utf8");
-  return JSON.parse(payload) as RuntimeSnapshot;
+  let payload: string;
+  try {
+    payload = readFileSync(filePath, "utf8");
+  } catch (error) {
+    throw new StratosphereError({
+      code: "FILE_READ_FAILED",
+      message: `Unable to read runtime snapshot file: ${filePath}`,
+      hint: "Check that the file exists and is readable by the MCP process.",
+      details: { filePath, reason: String(error) },
+    });
+  }
+
+  try {
+    return JSON.parse(payload) as RuntimeSnapshot;
+  } catch (error) {
+    throw new StratosphereError({
+      code: "JSON_PARSE_FAILED",
+      message: `Invalid JSON in runtime snapshot file: ${filePath}`,
+      hint: "Fix JSON syntax and ensure runtime snapshot schema fields exist.",
+      details: { filePath, reason: String(error) },
+    });
+  }
 }
 
 function buildConnection(
@@ -32,6 +54,15 @@ function buildConnection(
   sshPort?: number,
   sshKey?: string
 ): VmConnection | undefined {
+  if ((sshHost && !sshUser) || (!sshHost && sshUser)) {
+    throw new StratosphereError({
+      code: "INPUT_MISSING",
+      message: "ssh_host and ssh_user must be provided together.",
+      hint: "Provide both ssh_host and ssh_user, or remove both when using snapshot/local discovery.",
+      details: { sshHostProvided: Boolean(sshHost), sshUserProvided: Boolean(sshUser) },
+    });
+  }
+
   if (!sshHost || !sshUser) return undefined;
   return {
     host: sshHost,
@@ -50,7 +81,12 @@ function buildExportRequest(
 ): RepositoryExportRequest | undefined {
   if (!provider) return undefined;
   if (!owner || !repository) {
-    throw new Error("export_owner and export_repo are required when export_provider is provided.");
+    throw new StratosphereError({
+      code: "INPUT_MISSING",
+      message: "export_owner and export_repo are required when export_provider is provided.",
+      hint: "Provide both export_owner and export_repo when using export_provider.",
+      details: { provider, ownerProvided: Boolean(owner), repositoryProvided: Boolean(repository) },
+    });
   }
 
   return {
@@ -62,7 +98,21 @@ function buildExportRequest(
   };
 }
 
-function fail(code: string, message: string, details?: Record<string, unknown>) {
+function validateSignoffApprovers(value?: number): number | undefined {
+  if (value === undefined) return undefined;
+  if (value < 1) {
+    throw new StratosphereError({
+      code: "INPUT_INVALID",
+      message: "signoff_required_approvers must be >= 1.",
+      hint: "Use 1 or higher.",
+      details: { value },
+    });
+  }
+  return value;
+}
+
+function fail(error: unknown, fallbackCode: string, fallbackDetails?: Record<string, unknown>) {
+  const payload = toErrorPayload(error);
   return {
     content: [
       {
@@ -70,9 +120,13 @@ function fail(code: string, message: string, details?: Record<string, unknown>) 
         text: JSON.stringify(
           {
             error: {
-              code,
-              message,
-              details: details ?? {},
+              code: payload.code ?? fallbackCode,
+              message: payload.message,
+              hint: payload.hint,
+              details: {
+                ...(fallbackDetails ?? {}),
+                ...(payload.details ?? {}),
+              },
             },
           },
           null,
@@ -129,13 +183,23 @@ server.tool(
       const runtimeSnapshot = runtimeFile ? loadRuntimeSnapshot(runtimeFile) : undefined;
       const connection = buildConnection(ssh_host, ssh_user, ssh_port, ssh_key);
       const discoveryMode = local_discovery ? "local" : connection ? "ssh" : "snapshot";
+      const signoffRequiredApprovers = validateSignoffApprovers(signoff_required_approvers);
+
+      if (local_discovery && (ssh_host || ssh_user || ssh_port || ssh_key)) {
+        throw new StratosphereError({
+          code: "INPUT_CONFLICT",
+          message: "local_discovery cannot be combined with ssh_host/ssh_user/ssh_port/ssh_key.",
+          hint: "Use local_discovery alone or remove it and provide full SSH connection inputs.",
+        });
+      }
 
       if (!runtimeSnapshot && discoveryMode === "snapshot") {
-        return fail(
-          "INVALID_DISCOVERY_INPUT",
-          "runtime_file is required unless local_discovery is true or ssh_host/ssh_user are provided.",
-          { runtime_file, local_discovery, ssh_host, ssh_user }
-        );
+        throw new StratosphereError({
+          code: "INPUT_MISSING",
+          message: "runtime_file is required unless local_discovery is true or ssh_host/ssh_user are provided.",
+          hint: "Provide runtime_file, or set local_discovery=true, or provide ssh_host/ssh_user.",
+          details: { runtime_file, local_discovery, ssh_host, ssh_user },
+        });
       }
 
       const request: MigrationRunRequest = {
@@ -144,7 +208,7 @@ server.tool(
         outDir: outputDir,
         discoveryMode,
         initiatedBy: initiated_by,
-        signoffRequiredApprovers: signoff_required_approvers,
+        signoffRequiredApprovers,
         connection: local_discovery ? undefined : connection,
         exportRequest: buildExportRequest(
           export_provider,
@@ -190,7 +254,7 @@ server.tool(
         ],
       };
     } catch (error) {
-      return fail("MIGRATION_GENERATION_FAILED", String(error), {
+      return fail(error, "MIGRATION_GENERATION_FAILED", {
         runtime_file,
         local_discovery,
         out_dir,
@@ -227,6 +291,7 @@ server.tool(
     try {
       const outputDir = resolve(out_dir);
       const runtimeSnapshot = runtime_file ? loadRuntimeSnapshot(resolve(runtime_file)) : undefined;
+      const signoffRequiredApprovers = validateSignoffApprovers(signoff_required_approvers);
 
       const request: MigrationRunRequest = {
         migrationId: migration_id ?? runtimeSnapshot?.host.hostname ?? "local-vm-migration",
@@ -234,7 +299,7 @@ server.tool(
         outDir: outputDir,
         discoveryMode: "local",
         initiatedBy: initiated_by,
-        signoffRequiredApprovers: signoff_required_approvers,
+        signoffRequiredApprovers,
       };
 
       const result = await runMigrationPipeline(request);
@@ -261,7 +326,7 @@ server.tool(
         ],
       };
     } catch (error) {
-      return fail("LOCAL_VM_GENERATION_FAILED", String(error), {
+      return fail(error, "LOCAL_VM_GENERATION_FAILED", {
         out_dir,
         runtime_file,
       });
@@ -295,7 +360,7 @@ server.tool(
         ],
       };
     } catch (error) {
-      return fail("BUNDLE_VALIDATION_FAILED", String(error), { bundle_dir });
+      return fail(error, "BUNDLE_VALIDATION_FAILED", { bundle_dir });
     }
   }
 );
@@ -355,7 +420,7 @@ server.tool(
         ],
       };
     } catch (error) {
-      return fail("DECOMPOSITION_PREVIEW_FAILED", String(error), { runtime_file });
+      return fail(error, "DECOMPOSITION_PREVIEW_FAILED", { runtime_file });
     }
   }
 );

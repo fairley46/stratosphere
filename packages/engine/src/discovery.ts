@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { basename } from "node:path";
 import { promisify } from "node:util";
+import { StratosphereError } from "./errors.js";
 import type {
   CommandExecutionResult,
   DiscoveryAdapter,
@@ -518,7 +519,12 @@ export class SnapshotDiscoveryAdapter implements DiscoveryAdapter {
 
   async collect(request: DiscoveryRequest): Promise<DiscoveryResult> {
     if (!request.runtimeSnapshot) {
-      throw new Error("SnapshotDiscoveryAdapter requires request.runtimeSnapshot");
+      throw new StratosphereError({
+        code: "INPUT_MISSING",
+        message: "runtimeSnapshot is required for snapshot discovery mode.",
+        hint: "Provide --runtime-file or switch to --local-discovery / SSH mode.",
+        details: { mode: "snapshot" },
+      });
     }
 
     return {
@@ -539,7 +545,12 @@ export class SshDiscoveryAdapter implements DiscoveryAdapter {
 
   async collect(request: DiscoveryRequest): Promise<DiscoveryResult> {
     if (!request.connection) {
-      throw new Error("SshDiscoveryAdapter requires request.connection");
+      throw new StratosphereError({
+        code: "INPUT_MISSING",
+        message: "SSH discovery requires connection details.",
+        hint: "Provide ssh host and user or switch to snapshot/local discovery mode.",
+        details: { mode: "ssh" },
+      });
     }
 
     const commandRuns = await Promise.all(SSH_DISCOVERY_COMMANDS.map((command) => runSshCommand(request.connection!, command)));
@@ -554,9 +565,12 @@ export class SshDiscoveryAdapter implements DiscoveryAdapter {
     const mergedRuntime = mergeFallbackSnapshot(parsedRuntime, request.runtimeSnapshot);
 
     if (mergedRuntime.processes.length === 0) {
-      throw new Error(
-        "SSH discovery collected no process data. Ensure the SSH user has access to ps/ss/lsof and provide runtimeSnapshot fallback if needed."
-      );
+      throw new StratosphereError({
+        code: "DISCOVERY_NO_PROCESS_DATA",
+        message: "SSH discovery collected no process data.",
+        hint: "Ensure the SSH user can run ps/ss/lsof, then retry. You can also provide a runtime snapshot as fallback.",
+        details: { mode: "ssh", failedCommandCount: failed.length },
+      });
     }
 
     return {
@@ -588,9 +602,12 @@ export class LocalDiscoveryAdapter implements DiscoveryAdapter {
     const mergedRuntime = mergeFallbackSnapshot(parsedRuntime, request.runtimeSnapshot);
 
     if (mergedRuntime.processes.length === 0) {
-      throw new Error(
-        "Local discovery collected no process data. Ensure the process has permission to run ps/ss/lsof or provide runtimeSnapshot fallback."
-      );
+      throw new StratosphereError({
+        code: "DISCOVERY_NO_PROCESS_DATA",
+        message: "Local discovery collected no process data.",
+        hint: "Run with an account that can execute ps/ss/lsof or provide a runtime snapshot fallback file.",
+        details: { mode: "local", failedCommandCount: failed.length },
+      });
     }
 
     return {

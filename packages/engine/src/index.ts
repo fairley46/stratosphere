@@ -1,4 +1,5 @@
 export * from "./types.js";
+export * from "./errors.js";
 export * from "./discovery.js";
 export * from "./graph.js";
 export * from "./decompose.js";

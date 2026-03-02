@@ -32,6 +32,12 @@ npm run stratosphere -- \
   --out-dir artifacts/stratosphere
 ```
 
+## Input validation behavior
+
+- Conflicting inputs (example: `--local-discovery` with `--ssh-host`) are rejected.
+- Missing required inputs return structured error output with code + hint.
+- Invalid JSON snapshot files return explicit parse errors.
+
 ## Optional: include SSH connection metadata
 
 ```bash
