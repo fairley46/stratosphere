@@ -1,0 +1,76 @@
+{
+  "host": {
+    "hostname": "billing-prod-vm-01",
+    "os": "linux",
+    "distro": "Rocky Linux 9",
+    "ip": "10.40.8.23"
+  },
+  "processes": [
+    {
+      "pid": 1290,
+      "name": "billing-api",
+      "command": "java -jar billing-api.jar",
+      "user": "app",
+      "cpuPercent": 61.3,
+      "memoryMb": 1430,
+      "listeningPorts": [8080],
+      "fileWrites": ["/var/log/billing/app.log", "/tmp/billing-cache"],
+      "envHints": {
+        "SPRING_PROFILES_ACTIVE": "prod"
+      }
+    },
+    {
+      "pid": 1602,
+      "name": "invoice-worker",
+      "command": "dotnet InvoiceWorker.dll",
+      "user": "app",
+      "cpuPercent": 17.6,
+      "memoryMb": 612,
+      "listeningPorts": [],
+      "fileWrites": ["/var/lib/invoice-worker/state.db"]
+    },
+    {
+      "pid": 1781,
+      "name": "cleanup-job",
+      "command": "node cleanup.js",
+      "user": "app",
+      "cpuPercent": 4.2,
+      "memoryMb": 146,
+      "listeningPorts": [],
+      "fileWrites": ["/var/log/billing/cleanup.log"]
+    }
+  ],
+  "connections": [
+    {
+      "processName": "billing-api",
+      "toHost": "postgres.internal",
+      "toPort": 5432,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "billing-api",
+      "toHost": "redis.internal",
+      "toPort": 6379,
+      "protocol": "tcp"
+    },
+    {
+      "processName": "invoice-worker",
+      "toHost": "payments.vendor.example",
+      "toPort": 443,
+      "protocol": "tcp"
+    }
+  ],
+  "scheduledJobs": [
+    {
+      "name": "cleanup-nightly",
+      "schedule": "0 2 * * *",
+      "command": "node cleanup.js",
+      "source": "cron"
+    }
+  ],
+  "source": {
+    "repositoryPath": "git@github.com:acme/billing-platform.git",
+    "detectedStacks": ["java-spring", "dotnet", "nodejs"],
+    "buildFiles": ["pom.xml", "InvoiceWorker.csproj", "package.json"]
+  }
+}

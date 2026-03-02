@@ -1,0 +1,18 @@
+{
+  "name": "stratosphere",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stratosphere — AI-driven VM to Kubernetes migration architect.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -ws build",
+    "stratosphere": "npm --workspace @stratosphere/cli run run --",
+    "mcp:start": "npm --workspace @stratosphere/mcp run start"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}
