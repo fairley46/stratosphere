@@ -1,7 +1,6 @@
-# Stratosphere Demo Runbook
+# Demo Runbook
 
-Date: March 2, 2026
-Duration: 12-15 minutes
+*A 12-15 minute walkthrough you can run live, using committed fixtures.*
 
 ## Demo Objective
 Show that Stratosphere can take a legacy VM view, explain the application clearly, and generate a governed migration package that engineers can act on.
@@ -15,13 +14,16 @@ npm run build
 
 ## Run Demo Command
 
-**Quick demo (sample fixture):**
+### Option 1: One-command demo (recommended)
 ```bash
 npm run demo
 ```
 Output: `artifacts/stratosphere-demo/`
 
-**Or use one of the three documented real-world scenarios (recommended for enterprise audiences):**
+### Option 2: Scenario fixtures (good for Q&A)
+
+These scenario outputs are committed under `fixtures/scenarios/*/output/` so you can present without running anything.
+If you want to regenerate them, re-run the commands below.
 
 ### Scenario A: Java Spring Boot monolith
 Rocky Linux 9, Spring Boot + PostgreSQL, Liquibase migrations, stateful uploads, secrets: `DB_PASSWORD`, `JWT_SECRET`, `SMTP_API_KEY`.
@@ -47,8 +49,6 @@ npm run stratosphere -- \
   --runtime-file fixtures/scenarios/nodejs-hybrid/runtime.json \
   --out-dir fixtures/scenarios/nodejs-hybrid/output
 ```
-
-Pre-generated outputs are committed at `fixtures/scenarios/*/output/` — open them directly without rerunning to save time during a live demo.
 
 ## Demo Flow
 1. Start with business framing:

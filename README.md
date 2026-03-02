@@ -94,9 +94,8 @@ call `generate_local_vm_bundle` to generate artifacts from local runtime state w
 - [Enterprise Readiness](docs/stratosphere/governance/ENTERPRISE_READINESS.md) — rollout expectations
 - [Security Review](docs/stratosphere/governance/SECURITY_REVIEW.md) — hardening summary and residual risks
 
-**Go-to-market**
-- [Demo Runbook](docs/stratosphere/go-to-market/DEMO_RUNBOOK.md) — 12-minute demo talk track
-- [Brand](docs/stratosphere/go-to-market/BRAND.md) — positioning and messaging
+**Demo**
+- [Demo Runbook](docs/stratosphere/engineering/DEMO_RUNBOOK.md) — 12-15 minute walkthrough
 
 ---
 

@@ -37,9 +37,8 @@ Use this as your navigation hub. Pick your audience below.
 
 ---
 
-## I'm presenting or positioning
+## I want to run a demo
 
 | Doc | What it covers |
 |---|---|
-| [Demo Runbook](go-to-market/DEMO_RUNBOOK.md) | 12-minute demo talk track with artifact order |
-| [Brand Guide](go-to-market/BRAND.md) | Positioning pillars, messaging, and voice |
+| [Demo Runbook](engineering/DEMO_RUNBOOK.md) | 12-15 minute walkthrough using committed fixtures |
