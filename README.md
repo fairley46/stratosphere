@@ -2,6 +2,22 @@
 
 Stratosphere is an AI-driven migration architect that interrogates VM runtime behavior and produces Kubernetes-native migration artifacts.
 
+## Non-Technical Overview
+
+Stratosphere is a migration assistant for older business applications.
+
+It studies how your app runs today, creates a map of what exists now, and proposes a safer modern target design for tomorrow.
+It then generates a full migration package your technical team can review and deploy.
+
+What this means for app owners:
+- You get a clear view of how your application works today.
+- You get a clear recommendation for how it should look after modernization.
+- You keep your current app running while preparing the new environment (blue/green style).
+- A human must approve before any real production cutover.
+
+Product planning and upcoming user-focused features:
+- `docs/stratosphere/BACKLOG.md`
+
 ## Quickstart
 
 ```bash
