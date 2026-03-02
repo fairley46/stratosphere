@@ -4,7 +4,7 @@
 
 # Stratosphere
 
-**Interrogate the VM. Explain the system. Generate the migration plan.**
+**Interrogate. Explain. Accelerate.**
 
 Stratosphere is a Kubernetes-first migration architect for legacy enterprise applications.
 It observes how a VM actually behaves, explains what it found in plain language, and produces
@@ -116,4 +116,4 @@ call `generate_local_vm_bundle` to generate artifacts from local runtime state w
 
 ---
 
-*Interrogate the VM. Explain the system. Generate the migration plan.*
+*Interrogate. Explain. Accelerate.*
