@@ -110,18 +110,14 @@ stratosphere \
 
 ## Ways to use it
 
-**CLI** — Run `stratosphere --help` for all flags. Accepts snapshot files, local discovery,
-or live SSH. Optional: `--strategy`, `--intake-file`, `--workspace-file`, `--export-provider`.
-For workspace development, `npm run stratosphere -- --help` still works.
-See `docs/stratosphere/engineering/QUICKSTART.md`.
+Stratosphere has one engine with two main interactive entrypoints:
 
-**MCP server** — Start with `stratosphere mcp` (or `npm run mcp:start` in workspace mode).
-Register as a local stdio server in any
-MCP-compatible AI environment (Claude Desktop, Opencode, etc.) and call
-`generate_migration_bundle` or `generate_local_vm_bundle` directly from chat.
+1. **MCP (recommended for non-infra users)** — Start `stratosphere mcp` and drive the workflow from your enterprise agent host (Opencode, Claude Desktop, etc.). The agent asks the questions; Stratosphere generates the bundle.
+2. **CLI wizard (terminal prompts)** — Run `stratosphere --wizard ...` to answer plain-language questions directly in the terminal. This is not a full-screen TUI yet; it is a guided prompt flow.
 
-**Opencode (on the target VM)** — Register Stratosphere as an MCP server in Opencode, then
-call `generate_local_vm_bundle` to generate artifacts from local runtime state without SSH.
+**CLI (non-interactive)** — Run `stratosphere --help` for all flags. Accepts snapshot files, local discovery, or live SSH. Optional: `--strategy`, `--intake-file`, `--workspace-file`, `--export-provider`. See `docs/stratosphere/engineering/QUICKSTART.md`.
+
+For workspace development, `npm run mcp:start` and `npm run stratosphere -- ...` still work.
 
 ---
 

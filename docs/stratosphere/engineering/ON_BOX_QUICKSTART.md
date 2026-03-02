@@ -48,6 +48,16 @@ Typical arguments:
 - `strategy`: `minimal-change` | `balanced` | `aggressive-modernization`
 - optional `intake_file` and `workspace_file` for richer context
 
+## Optional: run without an agent host
+
+If you do not have Opencode (or another MCP-compatible agent host) available on the VM, you can run Stratosphere directly:
+
+```bash
+./stratosphere --wizard --local-discovery --out-dir artifacts/my-migration
+```
+
+This uses terminal prompts (not a full-screen TUI) to collect intake/workspace context before generating the bundle.
+
 ## 5) First reports to review
 
 Open these files first from the generated bundle:

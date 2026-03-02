@@ -27,7 +27,7 @@ stratosphere \
 ## Generate with audit and export planning
 
 ```bash
-npm run stratosphere -- \
+stratosphere \
   --runtime-file fixtures/stratosphere/sample-runtime.json \
   --initiated-by platform-team \
   --signoff-required-approvers 2 \

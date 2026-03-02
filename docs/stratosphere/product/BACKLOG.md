@@ -20,6 +20,7 @@ This file is intentionally short: it lists what remains to make Stratosphere eas
 - No HTTP API server.
 - No direct Kubernetes deployment or traffic shifting automation.
 - No real OAuth login flow (export execution is token-env based; `authMode` is currently informational).
+- No full-screen terminal UI (TUI); only a guided CLI prompt wizard (`--wizard`) and MCP tools.
 
 ---
 
@@ -45,4 +46,3 @@ This file is intentionally short: it lists what remains to make Stratosphere eas
 
 - Workspace-scale discovery orchestration across multiple VMs (coordinated runs + merged application map).
 - Optional HTTP API service built around the engine (for teams that want server-mode orchestration).
-

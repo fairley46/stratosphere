@@ -5,7 +5,7 @@ Stratosphere is an enterprise migration architect for legacy applications.
 It interrogates VM behavior, maps how an application works today, and generates a governed Kubernetes-first migration package teams can review and execute safely.
 
 Core message:
-"Interrogate the VM. Explain the system. Generate the migration plan."
+"Interrogate. Explain. Accelerate."
 
 ## Who It Serves
 1. Enterprise application owners modernizing long-running systems.
