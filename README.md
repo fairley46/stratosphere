@@ -18,6 +18,7 @@ What this means for app owners:
 Product planning and upcoming user-focused features:
 - `docs/stratosphere/BACKLOG.md`
 - `docs/stratosphere/PRODUCT_OVERVIEW.md`
+- `docs/stratosphere/EXECUTION_WORKFLOW_SPEC.md`
 
 ## Quickstart
 
