@@ -104,3 +104,61 @@ This backlog prioritizes non-technical user experience so long-running app owner
 1. Build P0 features 1, 2, and 3 first (intake + workspace + executive views).
 2. Add P0 features 4, 5, and 6 (decision quality + governance).
 3. Deliver P1/P2 based on pilot feedback and adoption blockers.
+
+## Unified Roadmap by Section (Original Scope + Backlog)
+
+This section merges the original v1 scope gaps with backlog additions into one execution list.
+
+### A) User Experience and Communication
+1. Guided intake wizard in plain language.
+2. Application workspace for multi-VM, multi-dependency applications.
+3. Executive current-state vs future-state summaries for non-technical owners.
+4. Readiness score + unknowns tracker.
+5. Migration options with tradeoffs (`minimal change`, `balanced`, `aggressive modernization`).
+6. Business impact translation (customer risk, outage risk, security risk, operating effort).
+7. Cost/ROI estimator.
+8. Executive reporting pack and in-product glossary/help.
+
+### B) Migration Intelligence and Artifact Quality
+9. Source analyzer that maps runtime processes to source/build files (Java/.NET/Node first).
+10. Time-window runtime profiler for stronger right-sizing recommendations.
+
+### C) Governance, Safety, and Delivery Controls
+11. Enforced human approval workflow as a hard gate.
+12. Vendor-owned/proprietary application advisory mode.
+13. Blue/green cutover planner with rollback simulation.
+14. Executable GitHub/GitLab export path (beyond planning-only mode).
+
+### D) Release Validation and Readiness
+15. Pilot validation against real enterprise-style workloads across three profiles.
+- Yes: this item is explicitly workload testing, not just feature development.
+- Goal: prove complete, human-approved bundles with no source VM disruption.
+
+## Working Demo Plan (Build Now)
+
+Yes, we can build a working demo now. Recommended demo scope:
+
+### Demo Goal
+- Show a non-technical app owner a complete end-to-end migration planning flow in under 15 minutes.
+
+### Demo Inputs
+- 1 sample multi-component runtime snapshot (or local discovery on a lab VM).
+- 1 simulated application workspace containing:
+  - app server VM
+  - stateful data dependency
+  - scheduled batch process
+
+### Demo Flow
+1. Complete guided intake (plain language prompts).
+2. Generate current-state map and executive summary.
+3. Generate future-state recommendations with option tradeoffs.
+4. Review readiness score, unknowns, and key business risks.
+5. Generate migration bundle + blue/green runbook + approval checkpoint.
+6. Show export plan output (GitHub/GitLab dry-run in demo).
+
+### Demo Success Criteria
+- Non-technical user can explain:
+  - how the app works today,
+  - what changes are recommended,
+  - what risks remain before cutover.
+- Full artifact package is produced with human sign-off checkpoint.
