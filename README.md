@@ -1,6 +1,7 @@
 # Stratosphere
 
-Stratosphere is an AI-driven migration architect that interrogates VM runtime behavior and produces Kubernetes-native migration artifacts.
+Stratosphere is a Kubernetes-first migration architect for legacy enterprise applications.
+It interrogates how a VM behaves in real life, explains what it found in plain language, and generates a governed migration package engineers can deploy safely.
 
 Brand promise:
 - Interrogate the VM.
@@ -9,7 +10,7 @@ Brand promise:
 
 ## Non-Technical Overview
 
-Stratosphere is a migration assistant for older business applications.
+If you’ve been running the same application for years and it “just works,” Stratosphere helps you modernize it without guessing.
 
 It studies how your app runs today, creates a map of what exists now, and proposes a safer modern target design for tomorrow.
 It then generates a full migration package your technical team can review and deploy.
@@ -20,20 +21,29 @@ What this means for app owners:
 - You keep your current app running while preparing the new environment (blue/green style).
 - A human must approve before any real production cutover.
 
-Product planning and upcoming user-focused features:
-- `docs/stratosphere/BACKLOG.md`
-- `docs/stratosphere/PRODUCT_OVERVIEW.md`
-- `docs/stratosphere/EXECUTION_WORKFLOW_SPEC.md`
+## Who This Is For (Personas)
+
+- Application Owner (non-technical):
+  - Wants modernization without unexpected outages.
+  - Needs “today vs tomorrow” clarity and a decision-ready summary.
+- Platform / Cloud Engineer:
+  - Wants a repeatable package: Dockerfiles, Helm, Terraform, and clear constraints.
+  - Needs governance gates and deterministic, reviewable output.
+- Security / Risk Reviewer:
+  - Wants auditability, explicit approvals, and a safer rebuilt baseline (not VM drift).
+- Migration Consultant / Delivery Team:
+  - Wants faster discovery and a credible plan without weeks of interviews.
 
 ## Product Docs
 
 Start here for full product context:
-- `docs/stratosphere/BRAND.md`
 - `docs/stratosphere/PRODUCT_OVERVIEW.md`
-- `docs/stratosphere/ENTERPRISE_READINESS.md`
-- `docs/stratosphere/ENGINEER_ONBOARDING.md`
 - `docs/stratosphere/DEMO_RUNBOOK.md`
+- `docs/stratosphere/ENGINEER_ONBOARDING.md`
+- `docs/stratosphere/ENTERPRISE_READINESS.md`
+- `docs/stratosphere/EXECUTION_WORKFLOW_SPEC.md`
 - `docs/stratosphere/SECURITY_REVIEW.md`
+- `docs/stratosphere/INDEX.md`
 
 ## Quickstart
 
@@ -48,6 +58,36 @@ Engineer onboarding path:
 npm run build
 npm run test:coverage
 ```
+
+## How It Works (At a Glance)
+
+Stratosphere builds a “current-state” view by observing runtime behavior, then generates a “future-state” Kubernetes plan with governance gates.
+
+```mermaid
+flowchart LR
+  A["Inputs (runtime + context)"] --> B["Discovery (snapshot/local/ssh)"]
+  B --> C["VM DNA graph + evidence"]
+  C --> D["Decomposition + recommendations"]
+  D --> E["Decision layer (strategy/readiness/impact/ROI)"]
+  E --> F["Artifacts (Docker/Helm/Terraform)"]
+  F --> G["Review + approval workflow"]
+  G --> H["Preflight + execution plan (blue/green)"]
+  H --> I["Export to GitHub/GitLab (policy-gated)"]
+```
+
+## User Journeys
+
+- App owner journey (15 minutes):
+  - Read `reports/executive-summary.md` and compare `reports/application-map-current.md` vs `reports/application-map-future.md`.
+  - Review `reports/business-impact.md`, `reports/readiness.md`, and `reports/roi-estimate.md`.
+  - Confirm whether unknowns need owners before scheduling a cutover.
+- Engineer journey (30-60 minutes):
+  - Review artifacts and templates, then validate with `npm run test` and bundle validation tools.
+  - Use `reports/cutover-plan.md` for a blue/green checklist and rollback triggers.
+  - Use export planning/execution outputs to deliver a PR/MR for review.
+- Security reviewer journey:
+  - Validate governance gates, audit evidence, and the security baseline notes.
+  - Confirm export execution policy and token scopes meet enterprise requirements.
 
 Outputs include Dockerfiles, Helm templates, Terraform scaffolding, VM DNA reports, and blue/green runbook artifacts.
 Each run now also includes:
@@ -160,6 +200,24 @@ Execution policy (current):
   - `--export-api-base-url` and `--export-web-base-url` for enterprise provider hosts
   - `--export-token-env` for enterprise secret/env naming alignment
 - Export result always reports whether execution was requested, allowed, and executed.
+
+## Workflow Model (Review Before Change)
+
+```mermaid
+stateDiagram-v2
+  [*] --> REVIEW_REQUIRED
+  REVIEW_REQUIRED --> REVISION_REQUIRED: request_changes
+  REVISION_REQUIRED --> REVIEW_REQUIRED: regenerate
+  REVIEW_REQUIRED --> APPROVAL_PENDING: accept
+  APPROVAL_PENDING --> PREFLIGHT_RUNNING: approvals met
+  PREFLIGHT_RUNNING --> EXECUTION_READY: pass
+  PREFLIGHT_RUNNING --> FAILED: fail
+  EXECUTION_READY --> EXECUTING: execute
+  EXECUTING --> PAUSED_FOR_REVIEW: pause
+  PAUSED_FOR_REVIEW --> EXECUTING: resume
+  EXECUTING --> FAILED: rollback trigger
+  FAILED --> [*]
+```
 
 ## MCP Support
 

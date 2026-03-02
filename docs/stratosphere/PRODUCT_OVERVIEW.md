@@ -14,6 +14,17 @@ Core message:
 2. Platform and cloud migration engineers delivering repeatable transformations.
 3. Security and operations teams requiring clear controls and auditability.
 
+## Primary User Personas
+1. Application Owner (non-technical)
+   - Needs: a clear explanation of what exists today, what will change, and what risk remains.
+   - Outputs they care about: executive summary, today vs future maps, business impact, ROI.
+2. Platform / Cloud Engineer
+   - Needs: deterministic artifacts and actionable guardrails.
+   - Outputs they care about: Dockerfiles, Helm chart, Terraform scaffolding, validation, cutover plan.
+3. Security / Risk Reviewer
+   - Needs: human-in-the-loop controls, audit evidence, and safe defaults.
+   - Outputs they care about: approvals workflow state, security baseline notes, sanitized error reporting.
+
 ## What the Product Delivers
 1. Discovery and understanding:
    - Runtime discovery (`snapshot`, `local`, `ssh`).

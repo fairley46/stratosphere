@@ -17,6 +17,7 @@ No direct credential logging paths were identified in normal flows.
 2. Credential handling
    - Export uses env-var token lookup only.
    - Token values are not included in returned error text or report outputs.
+   - Error details are sanitized and redacted before being returned to CLI/MCP users.
 3. Export safety gates
    - Execution requires:
      - `--export-execute`

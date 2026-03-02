@@ -166,5 +166,5 @@ Rollback behavior:
   - strategy/readiness/ROI/business-impact reporting and advisory blocker support
 - Still roadmap-bound:
   - direct production mutation orchestration against live clusters
-  - real provider API mutation for GitHub/GitLab export execution (policy scaffolding exists)
+  - enterprise tenant validation of GitHub/GitLab export execution (token scopes, SSO constraints, hosted endpoints)
   - pilot workload validation across enterprise environments

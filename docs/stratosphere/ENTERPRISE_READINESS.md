@@ -43,7 +43,7 @@ Define what "enterprise-ready" means for Stratosphere so engineering, security, 
 2. Policy hardening:
    - Add org-specific validation rules and compliance mappings.
 3. Integration hardening:
-   - Wire provider-side API execution for GitHub/GitLab under service identities.
+   - Validate provider-side export execution under service identities and enterprise tenancy constraints.
 4. Observability:
    - Track pipeline runs, approval events, and failure causes in centralized logging.
 5. Release model:
