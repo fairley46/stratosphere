@@ -76,3 +76,16 @@ The main gaps are operational validation and integration depth:
 1. Pilot validation against representative enterprise workloads (to tune templates and confidence rules).
 2. Enterprise export hardening (tenant/SSO expectations, scopes, and clearer preflight outcomes).
 3. Optional future execution automation (deploying to clusters) behind strong governance gates.
+
+## How Stratosphere Is Different (And Where It Stops)
+
+Many toolchains can produce containers, manifests, or migration scaffolding for supported workloads. Stratosphere’s durable value is making modernization understandable and governable when the people sponsoring the change are not infrastructure specialists.
+
+What makes it different:
+1. **Non-technical user journey**: guided intake in plain language, “today vs future” maps, option tradeoffs, unknowns, and next-step validation prompts.
+2. **Evidence-based reasoning**: recommendations include rationale, confidence, and explicit gaps instead of pretending discovery is complete.
+3. **Governance as a first-class output**: review, approvals, and preflight checks are part of the generated package, not tribal process.
+4. **Agent-ready surface**: MCP mode lets an enterprise Copilot/agent coordinate complex context (multi-VM, dependencies, vendor constraints) while staying deterministic and auditable.
+
+Where it stops (by design):
+- In this version, Stratosphere generates artifacts and a controlled execution plan. A human (typically the platform team) deploys and operates the migration after sign-off.

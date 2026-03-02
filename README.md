@@ -21,6 +21,19 @@ complete Kubernetes migration package with review and approval gates before anyt
 
 ---
 
+## How it fits with existing tools
+
+Cloud and vendor toolchains can already generate containers or migration assets for many stacks. Stratosphere is the layer that makes modernization usable and governable for teams who do not live in infrastructure every day:
+
+- **Decision and communication first**: plain-language intake, current-state map, future-state options, and “what to validate next”.
+- **Evidence-based recommendations**: confidence + unknowns + rationale for why something is a `Deployment`, `StatefulSet`, or `CronJob`.
+- **Governance built-in**: review, approvals, preflight checks, and a blue/green cutover plan that change boards can audit.
+- **Agent-accessible**: MCP tools let an enterprise Copilot/agent drive the workflow while keeping outputs deterministic and reviewable.
+
+Stratosphere is not “click-to-migrate” in v1. It produces artifacts and an execution plan that humans (typically platform teams) deploy after sign-off.
+
+---
+
 ## What you get
 
 | Artifact | Description |
