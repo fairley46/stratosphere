@@ -57,6 +57,7 @@ If you do not have Opencode (or another MCP-compatible agent host) available on 
 ```
 
 This uses terminal prompts (not a full-screen TUI) to collect intake/workspace context before generating the bundle.
+This is a prompt-driven terminal UI (lightweight TUI), not a full-screen TUI.
 
 ## 5) First reports to review
 

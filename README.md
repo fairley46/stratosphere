@@ -113,7 +113,7 @@ stratosphere \
 Stratosphere has one engine with two main interactive entrypoints:
 
 1. **MCP (recommended for non-infra users)** — Start `stratosphere mcp` and drive the workflow from your enterprise agent host (Opencode, Claude Desktop, etc.). The agent asks the questions; Stratosphere generates the bundle.
-2. **CLI wizard (terminal prompts)** — Run `stratosphere --wizard ...` to answer plain-language questions directly in the terminal. This is not a full-screen TUI yet; it is a guided prompt flow.
+2. **Interactive terminal wizard (lightweight TUI)** — Run `stratosphere --wizard ...` to answer plain-language questions directly in the terminal. This is a prompt-driven terminal UI, not a full-screen TUI.
 
 **CLI (non-interactive)** — Run `stratosphere --help` for all flags. Accepts snapshot files, local discovery, or live SSH. Optional: `--strategy`, `--intake-file`, `--workspace-file`, `--export-provider`. See `docs/stratosphere/engineering/QUICKSTART.md`.
 

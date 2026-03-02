@@ -20,7 +20,7 @@ This file is intentionally short: it lists what remains to make Stratosphere eas
 - No HTTP API server.
 - No direct Kubernetes deployment or traffic shifting automation.
 - No real OAuth login flow (export execution is token-env based; `authMode` is currently informational).
-- No full-screen terminal UI (TUI); only a guided CLI prompt wizard (`--wizard`) and MCP tools.
+- No full-screen TUI yet; the CLI wizard (`--wizard`) is a prompt-driven terminal UI (lightweight TUI), and MCP is the agent-driven interface.
 
 ---
 
