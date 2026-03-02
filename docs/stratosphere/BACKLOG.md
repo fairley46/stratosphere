@@ -124,6 +124,22 @@ Remaining in these phases:
 - Time-window profiler and variance/confidence modeling.
 - Full governance workflow service/API beyond file-level sign-off outputs.
 
+## Phase 4 Kickoff Inputs Needed
+
+To start Phase 4 implementation immediately, these decisions are required:
+1. Strategy option set definition:
+   `minimal-change`, `balanced`, `aggressive-modernization` scope and default rules.
+2. Readiness scoring rubric:
+   scoring weights for blockers, findings severity, confidence, and unknown inputs.
+3. Business impact categories:
+   mapping rules for customer risk, outage risk, security risk, and operating effort.
+4. ROI assumptions:
+   default cost inputs (compute/storage/network and migration effort assumptions).
+5. Reporting target format:
+   markdown-only vs markdown + JSON pack for executive sharing.
+6. Export execution policy:
+   when `export_execute` is allowed, required approvals, and token/auth model for GitHub/GitLab.
+
 ## Unified Roadmap by Section (Original Scope + Backlog)
 
 This section merges the original v1 scope gaps with backlog additions into one execution list.

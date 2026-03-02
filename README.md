@@ -17,6 +17,7 @@ What this means for app owners:
 
 Product planning and upcoming user-focused features:
 - `docs/stratosphere/BACKLOG.md`
+- `docs/stratosphere/PRODUCT_OVERVIEW.md`
 
 ## Quickstart
 
