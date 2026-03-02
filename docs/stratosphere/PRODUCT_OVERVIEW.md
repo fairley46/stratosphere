@@ -3,53 +3,63 @@
 Date: March 2, 2026
 
 ## Product Summary
-Stratosphere is a migration planning product for legacy applications. It inspects how an application runs today, explains findings in plain language, and generates a human-reviewed migration package for modern Kubernetes-oriented deployment targets.
+Stratosphere is an enterprise migration architect for legacy applications.
+It interrogates VM behavior, maps how an application works today, and generates a governed Kubernetes-first migration package teams can review and execute safely.
 
-## What Exists Today
-1. Runtime discovery in three modes: `snapshot`, `local`, and `ssh`.
-2. VM DNA and dependency mapping (processes, ports, storage writes, external calls, scheduled jobs).
-3. Decomposition recommendations into `Deployment`, `StatefulSet`, and `CronJob`.
-4. Artifact generation (Dockerfiles, Helm templates, Terraform scaffolds, validation outputs, blue/green runbook).
-5. Current-state and future-state application maps.
-6. Business intake + application workspace context integrated into generated outputs.
-7. Plain-language executive summary artifact for non-technical stakeholders.
-8. Vendor-owned advisory blocker behavior.
-9. CLI and MCP interfaces for direct and agent-assisted workflows.
-10. Structured error handling and high automated test confidence.
+Core message:
+"Interrogate the VM. Explain the system. Generate the migration plan."
 
-## User Journey (Non-Technical Owner)
-1. Provide business context:
-   app name, business owner, criticality, downtime tolerance, compliance needs, vendor ownership, approval contacts.
-2. Provide application scope:
-   workspace assets (VMs, databases, queues, external services) and relationships.
-3. Choose discovery mode:
-   snapshot file, local VM discovery, or read-only SSH discovery.
-4. Run Stratosphere:
-   system interrogates runtime and builds current-state understanding.
-5. Review proposed future architecture:
-   workload recommendations with rationale and confidence.
-6. Review generated package:
-   technical artifacts + executive summary + validation and sign-off outputs.
-7. Human decision gate:
-   approvers validate findings before deployment planning proceeds.
+## Who It Serves
+1. Enterprise application owners modernizing long-running systems.
+2. Platform and cloud migration engineers delivering repeatable transformations.
+3. Security and operations teams requiring clear controls and auditability.
 
-## Output Package
-1. Stakeholder-friendly:
-   `reports/executive-summary.md`, `reports/application-map-*.md`.
-2. Technical:
-   Dockerfiles, Helm chart/templates, Terraform scaffolding, decomposition and validation reports.
-3. Governance:
-   sign-off checkpoint/template, blue/green runbook, advisory blockers for vendor-owned systems.
-4. Intelligence:
-   runtime profile summary, source-analysis mapping hints.
+## What the Product Delivers
+1. Discovery and understanding:
+   - Runtime discovery (`snapshot`, `local`, `ssh`).
+   - VM DNA graph and dependency mapping.
+   - Source and runtime correlation hints.
+2. Migration intelligence:
+   - Workload decomposition to `Deployment`, `StatefulSet`, `CronJob`.
+   - Strategy options (`minimal-change`, `balanced`, `aggressive-modernization`).
+   - Readiness scoring, unknowns tracking, confidence outputs.
+3. Decision and business framing:
+   - ROI estimate with VM sustainment and OS security overhead.
+   - Business impact translation (customer/outage/security/operating effort).
+   - Executive pack and glossary for non-technical stakeholders.
+4. Delivery and governance:
+   - Docker, Helm, Terraform artifact generation.
+   - Blue/green cutover plan and rollback simulation.
+   - Execution lifecycle with review, approvals, preflight, pause, rollback.
+   - Export planning/execution policy scaffolding for GitHub/GitLab.
 
-## Safety Model
-1. Discovery is read-only by default.
-2. v1 is planning-first (no automatic production cutover execution).
-3. Human sign-off remains mandatory.
-4. Blue/green migration model is used to protect current-state operation.
-5. Vendor-owned systems can be marked advisory-only for controlled handling.
+## End-to-End User Journey
+1. Define context:
+   - Intake captures business owner, criticality, downtime and compliance needs, and approval contacts.
+   - Workspace captures multi-asset application composition.
+2. Discover runtime:
+   - Stratosphere interrogates system behavior and builds current-state map.
+3. Generate migration package:
+   - Future-state map, artifacts, validation, and decision reports are created.
+4. Review and approve:
+   - Teams assess readiness, risk, ROI, and cutover plan.
+   - Named approvers provide formal sign-off.
+5. Prepare execution:
+   - Preflight checks validate policy and readiness gates before execution states.
 
-## Current Product Boundary (Before Phase 4)
-Stratosphere is strong on discovery, decomposition, output generation, and review artifacts.  
-Phase 4 focuses on decision-layer maturity: migration strategy options, readiness scoring, business impact framing, ROI signals, improved reporting/help, and export execution hardening.
+## Product Access Modes
+1. Standalone CLI:
+   - deterministic local workflow for engineers and CI jobs.
+2. MCP server:
+   - agent-assisted workflow through enterprise copilots and local automation tools.
+
+## Safety and Trust Model
+1. Read-only discovery by default.
+2. Human-in-the-loop gates for review and approvals.
+3. Blue/green migration-first safety model with explicit rollback scenarios.
+4. Advisory-only handling for vendor-owned/proprietary applications.
+5. Structured errors and high automated test coverage gates.
+
+## Current Delivery Status
+Stratosphere is feature-complete for planning and governance-driven migration packaging.
+Remaining GA-critical activity is real workload pilot validation across enterprise environments and target platform integrations.

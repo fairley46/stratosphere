@@ -158,11 +158,13 @@ Rollback behavior:
 - environment credentials for deployment targets.
 
 ## Current Enforcement Status
-- Implemented today:
-  - review-centric planning outputs
-  - strategy/readiness/ROI reports
-  - advisory blocker support for vendor-owned apps
-- Not yet implemented:
-  - full lifecycle state machine with persisted transitions
-  - execution APIs and preflight/execute/rollback orchestration
-  - enforcement of approval policy on mutating operations
+- Implemented:
+  - full lifecycle state machine with persisted transitions (`reports/execution-job.json`)
+  - review + approval gates with required approver floor (`>=2`)
+  - preflight checks for approvals/readiness/evidence/export-policy gate
+  - execution, pause, rollback, and revision-diff tool surfaces in MCP
+  - strategy/readiness/ROI/business-impact reporting and advisory blocker support
+- Still roadmap-bound:
+  - direct production mutation orchestration against live clusters
+  - real provider API mutation for GitHub/GitLab export execution (policy scaffolding exists)
+  - pilot workload validation across enterprise environments

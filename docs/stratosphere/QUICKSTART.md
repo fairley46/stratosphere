@@ -22,6 +22,33 @@ npm run stratosphere -- \
   --export-repo billing-migration
 ```
 
+## Request export execution (policy-gated)
+
+```bash
+STRATOSPHERE_ENABLE_EXPORT_EXECUTION=true GITHUB_TOKEN=*** \
+npm run stratosphere -- \
+  --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --export-provider github \
+  --export-owner my-org \
+  --export-repo billing-migration \
+  --export-auth-mode oauth \
+  --export-branch codex/stratosphere-migration \
+  --export-target-branch main \
+  --export-token-env GITHUB_TOKEN \
+  --export-api-base-url https://api.github.com \
+  --export-web-base-url https://github.com \
+  --export-execute
+```
+
+## Run guided intake wizard (plain language)
+
+```bash
+npm run stratosphere -- \
+  --wizard \
+  --runtime-file fixtures/stratosphere/sample-runtime.json \
+  --out-dir artifacts/stratosphere
+```
+
 ## Generate with business intake + application workspace context
 
 ```bash
@@ -83,6 +110,12 @@ npm run test
 npm run test:coverage
 ```
 
+## Run full demo
+
+```bash
+npm run demo
+```
+
 ## Generated bundle
 
 - `docker/<component>/Dockerfile`
@@ -101,6 +134,8 @@ npm run test:coverage
 - `reports/intake.json` (when intake input is provided)
 - `reports/workspace.json` (when workspace input is provided)
 - `reports/runtime-profile-summary.json`
+- `reports/runtime-profile-window.json`
+- `reports/runtime-profile-window.md`
 - `reports/source-analysis.json`
 - `reports/migration-options.json`
 - `reports/migration-options.md`
@@ -108,5 +143,11 @@ npm run test:coverage
 - `reports/readiness.md`
 - `reports/roi-estimate.json`
 - `reports/roi-estimate.md`
+- `reports/business-impact.json`
+- `reports/business-impact.md`
+- `reports/cutover-plan.json`
+- `reports/cutover-plan.md`
+- `reports/glossary.json`
+- `reports/glossary.md`
 - `reports/executive-pack.json`
 - `reports/executive-pack.md`

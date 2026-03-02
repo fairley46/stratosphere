@@ -180,6 +180,33 @@ This section merges the original v1 scope gaps with backlog additions into one e
 - Yes: this item is explicitly workload testing, not just feature development.
 - Goal: prove complete, human-approved bundles with no source VM disruption.
 
+## Roadmap Execution Status (March 2, 2026)
+
+This status reflects current implementation progress against the unified roadmap list above.
+
+Completed:
+- `1` Guided intake foundation (`intake` JSON model + validation + executive summary inputs).
+- `2` Application workspace model for multi-asset application composition.
+- `3` Executive current/future maps and plain-language summary outputs.
+- `4` Readiness score with unknowns tracker and confidence graph.
+- `5` Migration strategy options with recommendation rationale.
+- `6` Business impact translation output (`customer-risk`, `outage-risk`, `security-risk`, `operating-effort`).
+- `7` ROI estimator including VM sustainment and OS security overhead.
+- `8` Executive pack + in-product glossary artifact output.
+- `9` Source analysis mapping report with process-to-component hints and confidence.
+- `10` Runtime time-window profile output with variance/confidence modeling.
+- `11` Enforced execution workflow gates (review, approvals, preflight, execution state machine).
+- `12` Vendor-owned advisory blocker behavior.
+- `13` Blue/green cutover planning outputs with rollback simulation scenarios.
+- `14` Export execution policy scaffolding with explicit gate/token checks and audited execution status.
+
+In progress:
+- `1` Guided intake wizard is implemented in CLI; MCP-side interactive wizard UX remains to be added.
+- `14` Provider-side mutation integrations are implemented with policy-gated OAuth/token flow; enterprise tenant rollout still needs pilot validation and token-scope hardening.
+
+Pending external validation:
+- `15` Pilot validation across real enterprise workloads. This requires environment access, representative apps, and stakeholder approvals.
+
 ## Working Demo Plan (Build Now)
 
 Yes, we can build a working demo now. Recommended demo scope:
