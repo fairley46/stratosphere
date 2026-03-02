@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type {
+  ApplicationMaps,
   ArtifactBundle,
   AuditMetadata,
   DecompositionResult,
@@ -75,6 +76,7 @@ function writeSummary(
   discovery: DiscoveryResult,
   graph: VmDnaGraph,
   decomposition: DecompositionResult,
+  applicationMaps: ApplicationMaps,
   validation: ValidationResult,
   audit: AuditMetadata,
   signoffCheckpoint: HumanSignoffCheckpoint,
@@ -86,6 +88,10 @@ function writeSummary(
     collector: discovery.evidence.collector,
     workloadCount: decomposition.recommendations.length,
     blockers: decomposition.blockers,
+    applicationMaps: {
+      currentStateSummary: applicationMaps.currentState.summary,
+      futureStateSummary: applicationMaps.futureState.summary,
+    },
     validation,
     signoffCheckpoint,
     exportResult,
@@ -105,6 +111,7 @@ export function exportBundle(
   discovery: DiscoveryResult,
   graph: VmDnaGraph,
   decomposition: DecompositionResult,
+  applicationMaps: ApplicationMaps,
   validation: ValidationResult,
   audit: AuditMetadata,
   signoffCheckpoint: HumanSignoffCheckpoint,
@@ -117,6 +124,12 @@ export function exportBundle(
   }
 
   writeArtifact(outDir, "reports/vm-dna-graph.json", JSON.stringify(graph, null, 2));
+  writeArtifact(outDir, "reports/application-map-current.md", applicationMaps.currentState.markdown);
+  writeArtifact(outDir, "reports/application-map-current.mmd", applicationMaps.currentState.mermaid);
+  writeArtifact(outDir, "reports/application-map-current-summary.json", JSON.stringify(applicationMaps.currentState.summary, null, 2));
+  writeArtifact(outDir, "reports/application-map-future.md", applicationMaps.futureState.markdown);
+  writeArtifact(outDir, "reports/application-map-future.mmd", applicationMaps.futureState.mermaid);
+  writeArtifact(outDir, "reports/application-map-future-summary.json", JSON.stringify(applicationMaps.futureState.summary, null, 2));
   writeArtifact(outDir, "reports/validation.json", JSON.stringify(validation, null, 2));
   writeArtifact(outDir, "reports/audit.json", JSON.stringify(audit, null, 2));
   writeArtifact(outDir, "reports/signoff-checkpoint.json", JSON.stringify(signoffCheckpoint, null, 2));
@@ -126,7 +139,17 @@ export function exportBundle(
   }
 
   writeArtifact(outDir, "reports/blue-green-runbook.md", blueGreenRunbook(decomposition));
-  writeSummary(outDir, discovery, graph, decomposition, validation, audit, signoffCheckpoint, exportResult);
+  writeSummary(
+    outDir,
+    discovery,
+    graph,
+    decomposition,
+    applicationMaps,
+    validation,
+    audit,
+    signoffCheckpoint,
+    exportResult
+  );
 }
 
 export function summarizeRun(result: MigrationRunResult): string {

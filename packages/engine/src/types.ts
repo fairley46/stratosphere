@@ -209,6 +209,36 @@ export type HumanSignoffCheckpoint = {
   approvedAt?: string;
 };
 
+export type ApplicationMaps = {
+  currentState: {
+    mermaid: string;
+    markdown: string;
+    summary: {
+      host: RuntimeSnapshot["host"];
+      processCount: number;
+      scheduledJobCount: number;
+      externalDependencyCount: number;
+      graph: {
+        nodeCount: number;
+        edgeCount: number;
+      };
+    };
+  };
+  futureState: {
+    mermaid: string;
+    markdown: string;
+    summary: {
+      componentCount: number;
+      blockers: string[];
+      byKind: {
+        Deployment: number;
+        StatefulSet: number;
+        CronJob: number;
+      };
+    };
+  };
+};
+
 export type MigrationRunRequest = {
   migrationId: string;
   runtimeSnapshot?: RuntimeSnapshot;
@@ -224,6 +254,7 @@ export type MigrationRunResult = {
   discovery: DiscoveryResult;
   graph: VmDnaGraph;
   decomposition: DecompositionResult;
+  applicationMaps: ApplicationMaps;
   bundle: ArtifactBundle;
   validation: ValidationResult;
   audit: AuditMetadata;

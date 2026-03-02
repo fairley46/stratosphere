@@ -30,10 +30,17 @@ test("runMigrationPipeline writes core reports and export plan", async () => {
 
   const summary = JSON.parse(readFileSync(join(outDir, "reports/migration-summary.json"), "utf8"));
   assert.equal(summary.audit.initiatedBy, "test-runner");
+  assert.ok(summary.applicationMaps.currentStateSummary);
+  assert.ok(summary.applicationMaps.futureStateSummary);
 
   const exportReport = JSON.parse(readFileSync(join(outDir, "reports/repository-export.json"), "utf8"));
   assert.equal(exportReport.provider, "github");
   assert.equal(exportReport.dryRun, true);
+
+  const currentMap = readFileSync(join(outDir, "reports/application-map-current.md"), "utf8");
+  const futureMap = readFileSync(join(outDir, "reports/application-map-future.md"), "utf8");
+  assert.ok(currentMap.includes("Current-State Application Map"));
+  assert.ok(futureMap.includes("Future-State Application Map"));
 
   rmSync(outDir, { recursive: true, force: true });
 });

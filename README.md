@@ -11,6 +11,9 @@ npm run stratosphere -- --runtime-file fixtures/stratosphere/sample-runtime.json
 ```
 
 Outputs include Dockerfiles, Helm templates, Terraform scaffolding, VM DNA reports, and blue/green runbook artifacts.
+Each run now also includes:
+- `reports/application-map-current.md` (how it works today)
+- `reports/application-map-future.md` (proposed future architecture map)
 
 ## Local VM Discovery (No SSH)
 

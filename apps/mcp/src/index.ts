@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
+  buildApplicationMaps,
   getSshDiscoveryCommandSet,
   previewDecomposition,
   runMigrationPipeline,
@@ -174,6 +175,10 @@ server.tool(
                   dependencies: item.dependencies,
                 })),
                 blockers: result.decomposition.blockers,
+                applicationMaps: {
+                  currentStateSummary: result.applicationMaps.currentState.summary,
+                  futureStateSummary: result.applicationMaps.futureState.summary,
+                },
                 validation: result.validation,
                 signoffCheckpoint: result.signoffCheckpoint,
                 exportResult: result.exportResult,
@@ -242,6 +247,10 @@ server.tool(
                 migrationId: request.migrationId,
                 outDir: outputDir,
                 summary: summarizeRun(result),
+                applicationMaps: {
+                  currentStateSummary: result.applicationMaps.currentState.summary,
+                  futureStateSummary: result.applicationMaps.futureState.summary,
+                },
                 validation: result.validation,
                 signoffCheckpoint: result.signoffCheckpoint,
               },
@@ -303,6 +312,17 @@ server.tool(
       const runtimeFile = resolve(runtime_file);
       const runtimeSnapshot = loadRuntimeSnapshot(runtimeFile);
       const preview = previewDecomposition(migration_id ?? runtimeSnapshot.host.hostname, runtimeSnapshot);
+      const discovery = {
+        runtime: runtimeSnapshot,
+        evidence: {
+          collector: "snapshot",
+          commands: [],
+          warnings: [],
+          collectedAt: new Date().toISOString(),
+          commandResults: [],
+        },
+      };
+      const maps = buildApplicationMaps(preview.graph, discovery, preview.decomposition);
 
       return {
         content: [
@@ -323,6 +343,10 @@ server.tool(
                   rationale: item.rationale,
                 })),
                 blockers: preview.decomposition.blockers,
+                applicationMaps: {
+                  currentStateSummary: maps.currentState.summary,
+                  futureStateSummary: maps.futureState.summary,
+                },
               },
               null,
               2

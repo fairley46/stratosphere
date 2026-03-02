@@ -3,6 +3,7 @@ import { buildVmDnaGraph } from "./graph.js";
 import { decomposeRuntime } from "./decompose.js";
 import { generateArtifacts } from "./generate.js";
 import { validateBundle } from "./validate.js";
+import { buildApplicationMaps } from "./maps.js";
 import { LocalDiscoveryAdapter, SshDiscoveryAdapter, SnapshotDiscoveryAdapter } from "./discovery.js";
 import { exportBundle } from "./export.js";
 import { planRepositoryExport } from "./repository-export.js";
@@ -98,6 +99,7 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
 
   const graph = buildVmDnaGraph(request.migrationId, discovery);
   const decomposition = decomposeRuntime(discovery);
+  const applicationMaps = buildApplicationMaps(graph, discovery, decomposition);
   const bundle = generateArtifacts(request.migrationId, discovery, decomposition);
   const validation = validateBundle(bundle, decomposition);
   const signoffCheckpoint = buildSignoffCheckpoint(request);
@@ -109,6 +111,7 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     discovery,
     graph,
     decomposition,
+    applicationMaps,
     bundle,
     validation,
     audit,
@@ -122,6 +125,7 @@ export async function runMigrationPipeline(request: MigrationRunRequest): Promis
     discovery,
     graph,
     decomposition,
+    applicationMaps,
     validation,
     audit,
     signoffCheckpoint,
